@@ -23,8 +23,8 @@ with shadow detection by KaewTraKulPong "cv2.createBackgroundSubtractorMOG"
 and Efficient Adaptive Density Estimation per Image Pixel for the Task of Background 
 Subtraction, also by Zivkovic "cv2.BackgroundSubtractorMOG2"
 """
-
-fgbg = cv2.createBackgroundSubtractorMOG2() ##detectShadows=False for non detecting shados as grey color
+##cv2.createBackgroundSubtractorKNN
+fgbg = cv2.createBackgroundSubtractorMOG2() ##detectShadows=False for non detecting shadows as grey color
 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
 ##main loop
 while True:
@@ -40,6 +40,16 @@ while True:
     mask_area = frame[50:keypad_end_line_y, 0:frame.shape[1]]
     detection_mask =  fgbg.apply(mask_area)
     detection_mask = cv2.morphologyEx(detection_mask, cv2.MORPH_OPEN, kernel)
+    #find the largest contour in the fgmask image
+    _,contours,_ = cv2.findContours(detection_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE) ## or cv2.CHAIN_APPROX_NONE
+    cv2.drawContours(output_image, contours, -1, (0,255,0), 3)
+    ##print(len(contours))
+    for cnt in contours:
+        (x,y), r = cv2.minEnclosingCircle(cnt)
+        area = cv2.contourArea(cnt)
+        print(area)
+        if area > 1000 and area < 2000:
+            cv2.circle(output_image,(int(x),int(y)),int(r),(23,208,253), thickness=5)
     cv2.imshow('V-PAD',output_image)
     cv2.imshow('Mask',detection_mask)
     key = cv2.waitKey(30) & 0xff
