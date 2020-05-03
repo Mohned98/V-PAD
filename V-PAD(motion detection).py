@@ -3,12 +3,18 @@ import math
 import numpy as np
 
 #define keypad properties
-initial_key_x = 30
-offset = 60
-key_y = 80
+initial_key_x = 30 ## x coordinate of the first key  
+offset = 60 ## used to determine distance between keys 
+key_y = 80 ## determines keys y coordinate
 font = cv2.FONT_HERSHEY_SIMPLEX
 keypad_color = (23,208,253)
-keypad_end_line_y = 130
+hover_color = (18,166,202) #keypad keys hover color
+keypad_end_line_y = 130 
+hover_circle_color = (0,120,255) #circle color that appears when hovering over keypad keys
+hover_line_color = (0,0,0)  ##cross color that appear when hovering over keypad keys
+
+#create a string for the entered number
+input_word = ''
 
 ##capture webcam video  
 cap = cv2.VideoCapture(0) ## object for the video handle
@@ -40,6 +46,7 @@ while True:
     mask_area = frame[50:keypad_end_line_y, 0:frame.shape[1]]
     detection_mask =  fgbg.apply(mask_area)
     detection_mask = cv2.morphologyEx(detection_mask, cv2.MORPH_OPEN, kernel)
+    ######################################################################
     #find the largest contour in the fgmask image
     _,contours,_ = cv2.findContours(detection_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE) ## or cv2.CHAIN_APPROX_NONE
     cv2.drawContours(output_image, contours, -1, (0,255,0), 3)
@@ -48,8 +55,6 @@ while True:
         (x,y), r = cv2.minEnclosingCircle(cnt)
         area = cv2.contourArea(cnt)
         print(area)
-        if area > 1000 and area < 2000:
-            cv2.circle(output_image,(int(x),int(y)),int(r),(23,208,253), thickness=5)
     cv2.imshow('V-PAD',output_image)
     cv2.imshow('Mask',detection_mask)
     key = cv2.waitKey(30) & 0xff
