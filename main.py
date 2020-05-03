@@ -3,30 +3,34 @@ import tkinter.font as tkFont
 import tkinter.messagebox as tkMessageBox
 
 
-
 root = Tk()
-
-#set window title
 root.wm_title("V_Keypad")
 
 # set window size
-root.geometry("800x400")
+root.geometry("800x500")
 
+#set window color
+root.config(bg="#900C3F")
 
-# set a  welcome label
-welcome = Label(root ,text="welcome to our V_Keypad" ,fg="black")
-welcome.pack()
+#set font style
+fontStyle = tkFont.Font(family="Lucida Grande", size=30 )
 
+welcome = Label(root ,text="welcome to our V_Keypad" ,bg="#900C3F" ,fg="white"  ,font=fontStyle)
+welcome.pack( pady=10,fill=X)
 
 
 def start_btn():
-    tkMessageBox.showinfo( "Hello", "start")
-
+    tkMessageBox.showinfo( "Hello Python", "start")
     
 
-# create a start button
-Startbutton = Button( root, text="Let's Start...", command=start_btn , fg="black")
-Startbutton.pack()
+
+Startbutton = Button( root, text="Let's Start...", fg="blue", command=start_btn ,font = fontStyle)
+
+#set position of button
+Startbutton.place(x=250,y=170)
+
+
+
 
 
 root.mainloop()
