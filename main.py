@@ -1,4 +1,5 @@
 from tkinter import *
+import keypad
 import tkinter.font as tkFont
 import tkinter.messagebox as tkMessageBox
 
@@ -20,16 +21,15 @@ welcome.pack( pady=10,fill=X)
 
 
 def start_btn():
-    tkMessageBox.showinfo( "Hello Python", "start")
-    
+    welcome.pack_forget()
+    Startbutton.pack_forget()
+
 
 
 Startbutton = Button( root, text="Let's Start...", fg="blue", command=start_btn ,font = fontStyle)
 
 #set position of button
 Startbutton.place(x=250,y=170)
-
-
 
 
 
