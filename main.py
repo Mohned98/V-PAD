@@ -23,6 +23,7 @@ welcome.pack( pady=10,fill=X)
 def start_btn():
     welcome.pack_forget()
     Startbutton.pack_forget()
+    res=keypad()
 
 
 
