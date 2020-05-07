@@ -3,11 +3,11 @@ import glob
 
 # 1.Define a list to include all video images:
 img_array = []
-height ,width = 703,800
+height ,width = 500,500
 size = (width,height)
 
 # 2.read all hand images from its directory then store at the list after resizing them:
-for filename in glob.glob('images\*.jpg'):
+for filename in glob.glob('images\*.png'):
     img = cv2.imread(filename)
     img = cv2.resize(img,size)
     img_array.append(img)
