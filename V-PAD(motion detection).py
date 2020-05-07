@@ -29,7 +29,19 @@ time_limit = 10
 input_word = ''
 
 BG_captured = False
- 
+bgSubThreshold = 50
+learning_rate = 0
+
+def cropMovingObject(frame):
+    detected_mask =  fgbg.apply(frame, learningRate= learning_rate)
+    #eliminate the noise by using morphological operations
+    #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    #detected_mask = cv2.morphologyEx(detected_mask, cv2.MORPH_OPEN, kernel)
+    kernel = np.ones((3, 3), np.uint8)
+    detected_mask = cv2.erode(detected_mask, kernel, iterations=1)
+    detected_mask = cv2.bitwise_and(frame, frame, mask=detected_mask)
+    return detected_mask
+
 #capture webcam video  
 cap = cv2.VideoCapture(0) # object for the video handle
 cap.set(3, 1920) # change width to 1920 pixels
@@ -65,7 +77,14 @@ while True:
             print(time_in_seconds)
         previous_time = current_time
     else:
-        pass
+        detected_mask = cropMovingObject(output_image)
+        detected_mask = detected_mask[int(detection_rec_y_start * output_image.shape[0]):
+                                        int(detection_rec_y_end * output_image.shape[0]), 
+                                        int(detection_rec_x_start * output_image.shape[1]):
+                                        int(detection_rec_x_end * output_image.shape[1])]
+        cv2.imshow("Mask", detected_mask)
+
+
 
     cv2.imshow('V-PAD',output_image)
     key = cv2.waitKey(30) & 0xff
