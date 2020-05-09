@@ -30,13 +30,14 @@ bg_sub_learning_rate = 0
 gaussian_blur_dim = 41 # GaussianBlur kernel parameter
 threshold = 60 # Binary threshold
 # Hand color detection parameters
-kernel_dim_filter2D = 1 # kernel dimension of 2D filter for masking hand color
-kernel_dim_close = 1 # kernel dimension of morphological close operation 
-no_iterations_close = 1 # number of iteration of morphological close operation
+kernel_dim_filter2D = 21 # kernel dimension of 2D filter for masking hand color
+kernel_dim_close = 5 # kernel dimension of morphological close operation 
+no_iterations_close = 7 # number of iteration of morphological close operation
 
 # variables to calculate elapsed time in seconds
 previous_time = 0
 time_in_seconds = 0
+hand_hist_time_limit = 10 # time to perform capture samples of hand color and perform calculate its histogram
 BG_sub_time_limit = 20    # time to perform background subtraction action
 
 # hand histogram samples coordinates
@@ -44,7 +45,7 @@ sample_hist_x = [6.0/20.0, 9.0/20.0, 12.0/20.0]
 sample_hist_y = [9.0/20.0, 10.0/20.0, 11.0/20.0]
 
 BG_captured = False
-
+hand_hist_detected = False
 
 
 # create a string for the entered number
@@ -131,7 +132,10 @@ while True:
         current_time = round(time.perf_counter())
         if (current_time - previous_time) == 1:
             time_in_seconds +=1
-            if time_in_seconds == BG_sub_time_limit:
+            if time_in_seconds == hand_hist_time_limit :
+                hand_hist = createHandHSVHistogram(output_image)
+                hand_hist_detected = True
+            elif time_in_seconds == BG_sub_time_limit:
                 time_in_seconds = 0
                 """
                 create a method that can seperate the moving foreground from the background
@@ -148,10 +152,18 @@ while True:
         # then the hand histogram is created and the background subtraction is performed
         roi = output_image[detection_rec_y0:detection_rec_y0 + detection_rec_height,
                            detection_rec_x0:detection_rec_x0 + detection_rec_width]
+        # create a mask of the hand using hand color histigram
+        roi = cv2.bilateralFilter(roi, 5, 50, 100)
+        hist_mask = histMasking(roi, hand_hist)
+        hist_mask = binarizeImage(hist_mask)
+        cv2.imshow("Histogram Mask",hist_mask)
         # create a mask of the hand using background subtraction
         mov_obj_mask = cropMovingObject(roi)
         mov_obj_mask = binarizeImage(mov_obj_mask)
         cv2.imshow("Motion Mask",mov_obj_mask)
+        # and the 2 masks to detect the moving hand
+        hand_mask = cv2.bitwise_and(hist_mask, mov_obj_mask)
+        cv2.imshow("Hand Mask", hand_mask)
     cv2.imshow('V-PAD',output_image)
     key = cv2.waitKey(30) & 0xff
     if key == 27: # if the key is esc character break the loop then close the video streaming
