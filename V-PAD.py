@@ -206,7 +206,6 @@ while True:
         roi = output_image[detection_rec_y0:detection_rec_y0 + detection_rec_height,
                            detection_rec_x0:detection_rec_x0 + detection_rec_width]
         # create a mask of the hand using hand color histigram
-        roi = cv2.bilateralFilter(roi, 5, 50, 100)
         hist_mask = histMasking(roi, hand_hist)
         hist_mask = binarizeImage(hist_mask)
         cv2.imshow("Histogram Mask",hist_mask)
@@ -218,7 +217,7 @@ while True:
         hand_mask = cv2.bitwise_and(hist_mask, mov_obj_mask)
         cv2.imshow("Hand Mask", hand_mask)
         # Find the contours of the hand mask:
-        contours, hierarchy = cv2.findContours(detecting_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        _,contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if len(contours) > 0:
             max_contour = max(contours, key=cv2.contourArea)          # hand palm is the largest contour area.
             center = contour_centroid(max_contour)                    # Find the center of the hand palm.
@@ -226,7 +225,6 @@ while True:
             convex_defects = cv2.convexityDefects(max_contour, hull)
             if convex_defects is not None:
                 defects_points = convex_defects[:, 0][:, 0]           # Convex hull start points
-
                 # Find the fingertip point of the hand palm using the convex hull:
                 fingertip_point = get_fingertip(defects_points,max_contour,center,output_image.shape)
                 cv2.circle(output_image, fingertip_point, 20, hover_circle_color, 3)
