@@ -263,7 +263,7 @@ while True:
     _,frame=cap.read()
     frame = cv2.flip(frame, 1) # 1 for flipping around the y-axis
     output_image = frame.copy()
-    output_image = cv2.bilateralFilter(output_image, 5, 50, 100) #smoothing filter
+    frame = cv2.bilateralFilter(output_image, 5, 50, 100) #smoothing filter
     # draw the detection rectangle on the copy of the original video frame
     detection_rec_x0 = int(detection_rec_x_start * output_image.shape[1]) # The top left point x value
     detection_rec_y0 = int(detection_rec_y_start * output_image.shape[0]) # The top left point y value
@@ -273,8 +273,6 @@ while True:
     detection_rec_width = detection_rec_x1 - detection_rec_x0
     cv2.rectangle(output_image,(detection_rec_x0,detection_rec_y0),(detection_rec_x1, detection_rec_y1),
                   detection_rec_color, 2)
-    # Draw the keypad:
-    draw_keypad(output_image)
 
     if BG_captured == False :
         # then the time hasn't reached yet its limit value so either 
@@ -284,7 +282,7 @@ while True:
         if (current_time - previous_time) == 1:
             time_in_seconds +=1
             if time_in_seconds == hand_hist_time_limit :
-                hand_hist = createHandHSVHistogram(output_image)
+                hand_hist = createHandHSVHistogram(frame)
                 hand_hist_detected = True
             elif time_in_seconds == BG_sub_time_limit:
                 time_in_seconds = 0
@@ -300,26 +298,28 @@ while True:
             print(time_in_seconds)
         previous_time = current_time
     else:
+        # Draw the keypad:
+        draw_keypad(output_image)
         # then the hand histogram is created and the background subtraction is performed
-        roi = output_image[detection_rec_y0:detection_rec_y0 + detection_rec_height,
+        roi = frame[detection_rec_y0:detection_rec_y0 + detection_rec_height,
                            detection_rec_x0:detection_rec_x0 + detection_rec_width]
 
-        # create a mask of the hand using hand color histigram
+        # create a mask of the hand using hand color histogram
         hist_mask = histMasking(roi, hand_hist)
         hist_mask = binarizeImage(hist_mask)
-        #cv2.imshow("Histogram Mask",hist_mask)
+        cv2.imshow("Histogram Mask",hist_mask)
 
         # create a mask of the hand using background subtraction
         mov_obj_mask = cropMovingObject(roi)
         mov_obj_mask = binarizeImage(mov_obj_mask)
-        #cv2.imshow("Motion Mask",mov_obj_mask)
+        cv2.imshow("Motion Mask",mov_obj_mask)
 
         # and the 2 masks to detect the moving hand
         hand_mask = cv2.bitwise_and(hist_mask, mov_obj_mask)
-        #cv2.imshow("Hand Mask", hand_mask)
+        cv2.imshow("Hand Mask", hand_mask)
 
         # Find the contours of the hand mask:
-        contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        _,contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if len(contours) > 0:
             max_contour = max(contours, key=cv2.contourArea)          # hand palm is the largest contour area.
             center = contour_centroid(max_contour)                    # Find the center of the hand palm.
