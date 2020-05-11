@@ -2,6 +2,10 @@ import cv2
 import math
 import numpy as np
 import time
+from tkinter import *
+from PIL import Image
+from PIL import ImageTk
+import tkinter.font as tkFont
 
 # define keypad properties:
 rec_key_width = 100                   # the width of the key rectangle
@@ -21,32 +25,33 @@ hover_rectangle_color = (255,255,255)
 Enter_button_color = (0,255,0)
 Cancel_button_color = (0,0,255)
 Clear_button_color = (0,255,255)
+hand_hist_rec_color = (0, 255, 0)
 
 # Detection Rectangle properties
 # detection rectangle coordinates percentage of total width and height
-detection_rec_x_start = 0.48
+detection_rec_x_start = 0.5 
 detection_rec_x_end = 1
-detection_rec_y_start = 0.0
+detection_rec_y_start = 0.1
 detection_rec_y_end = 0.8
 # detection rectangle color
 detection_rec_color = (255, 0, 0)
 
 # tuning parameters
 # Mothion detection parameters
-bg_sub_threshold = 50                # threshold value of the background subtractor function
+bg_sub_threshold = 50 # threshold value of the background subtractor function
 bg_sub_learning_rate = 0
-gaussian_blur_dim = 41               # GaussianBlur kernel parameter
-threshold = 60                       # Binary threshold
+gaussian_blur_dim = 41 # GaussianBlur kernel parameter
+threshold = 60 # Binary threshold
 # Hand color detection parameters
-kernel_dim_filter2D = 21             # kernel dimension of 2D filter for masking hand color
-kernel_dim_close = 5                 # kernel dimension of morphological close operation
-no_iterations_close = 7              # number of iteration of morphological close operation
+kernel_dim_filter2D = 21 # kernel dimension of 2D filter for masking hand color
+kernel_dim_close = 5 # kernel dimension of morphological close operation 
+no_iterations_close = 7 # number of iteration of morphological close operation
 
 # variables to calculate elapsed time in seconds
 previous_time = 0
 time_in_seconds = 0
-hand_hist_time_limit = 10            # time to perform capture samples of hand color and perform calculate its histogram
-BG_sub_time_limit = 20               # time to perform background subtraction action
+hand_hist_time_limit = 10 # time to perform capture samples of hand color and perform calculate its histogram
+BG_sub_time_limit = 20    # time to perform background subtraction action
 
 # hand histogram samples coordinates
 sample_hist_x = [6.0/20.0, 9.0/20.0, 12.0/20.0]
@@ -55,8 +60,12 @@ sample_hist_y = [9.0/20.0, 10.0/20.0, 11.0/20.0]
 BG_captured = False
 hand_hist_detected = False
 
+fgbg = None
+hand_hist = None 
+
 # create a string for the entered number
 input_word = ''
+
 
 def createHandHSVHistogram(frame):
     HSV_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -79,10 +88,10 @@ def createHandHSVHistogram(frame):
     return cv2.normalize(handHist, handHist, 0, 255, cv2.NORM_MINMAX)
 
 
-def histMasking(frame, hand_hist):
+def histMasking(frame, hand_histo):
     hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     # apply the precalculated hand color histogram to capture only the histogram of the skin area of the new image
-    back_proj_img = cv2.calcBackProject([hsv_frame], [0, 1], hand_hist, [0, 180, 0, 256], 1)
+    back_proj_img = cv2.calcBackProject([hsv_frame], [0, 1], hand_histo, [0, 180, 0, 256], 1)
 
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_dim_filter2D, kernel_dim_filter2D))
     cv2.filter2D(back_proj_img, -1, kernel, back_proj_img)
@@ -263,37 +272,31 @@ def draw_selected_key(frame,key_index):
            else:
                cv2.putText(frame, key_info[2], (key_info[0], key_info[1]), font, 1.5, hover_color, 3)
 
-# capture webcam video
-cap = cv2.VideoCapture(0)     # object for the video handle
-cap.set(3, 1920)              # change width to 1920 pixels
-cap.set(4, 1080)              # change height to 1080 pixels
-cap.set(10, 200)              # change brightness to 200
-
-# main loop
-while True:
+def mainProcess():
     _,frame=cap.read()
     frame = cv2.flip(frame, 1) # 1 for flipping around the y-axis
     output_image = frame.copy()
-    frame = cv2.bilateralFilter(output_image, 5, 50, 100) #smoothing filter
-    # draw the detection rectangle on the copy of the original video frame
-    detection_rec_x0 = int(detection_rec_x_start * output_image.shape[1]) # The top left point x value
-    detection_rec_y0 = int(detection_rec_y_start * output_image.shape[0]) # The top left point y value
-    detection_rec_x1 = int(detection_rec_x_end * output_image.shape[1])   # The bottom right point x value
-    detection_rec_y1 = int(detection_rec_y_end * output_image.shape[0])   # The bottom right point y value
-    detection_rec_height = detection_rec_y1 - detection_rec_y0
-    detection_rec_width = detection_rec_x1 - detection_rec_x0
-    cv2.rectangle(output_image,(detection_rec_x0,detection_rec_y0),(detection_rec_x1, detection_rec_y1),
-                  detection_rec_color, 2)
-
+    output_image = cv2.bilateralFilter(output_image, 5, 50, 100) #smoothing filter
+    global BG_captured
+    global hand_hist_detected
     if BG_captured == False :
         # then the time hasn't reached yet its limit value so either 
         # the hand histogram hasn't been created yet or 
         # the background subtraction hasn't been performed
+        global time_in_seconds
+        if time_in_seconds < hand_hist_time_limit:
+            x0, y0 = int(sample_hist_x[0]*frame.shape[0]), int(sample_hist_y[0]*frame.shape[1]) + (detection_rec_width // 2) -10 
+            cv2.rectangle(output_image,(y0, x0),(y0 + 84,x0 + 116),hand_hist_rec_color, 1)
+        elif time_in_seconds > hand_hist_time_limit and time_in_seconds < BG_sub_time_limit:
+            cv2.rectangle(output_image,(detection_rec_x0,detection_rec_y0),(detection_rec_x1, detection_rec_y1),
+                  detection_rec_color, 2)
         current_time = round(time.perf_counter())
+        global previous_time
         if (current_time - previous_time) == 1:
             time_in_seconds +=1
             if time_in_seconds == hand_hist_time_limit :
-                hand_hist = createHandHSVHistogram(frame)
+                global hand_hist
+                hand_hist = createHandHSVHistogram(output_image)
                 hand_hist_detected = True
             elif time_in_seconds == BG_sub_time_limit:
                 time_in_seconds = 0
@@ -304,6 +307,7 @@ while True:
                 and Efficient Adaptive Density Estimation per Image Pixel for the Task of Background 
                 Subtraction, also by Zivkovic "cv2.BackgroundSubtractorMOG2"
                 """
+                global fgbg
                 fgbg = cv2.createBackgroundSubtractorMOG2(0,bg_sub_threshold) 
                 BG_captured = True
             print(time_in_seconds)
@@ -330,7 +334,7 @@ while True:
         #cv2.imshow("Hand Mask", hand_mask)
 
         # Find the contours of the hand mask:
-        contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        _,contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if len(contours) > 0:
             max_contour = max(contours, key=cv2.contourArea)          # hand palm is the largest contour area.
             center = contour_centroid(max_contour)                    # Find the center of the hand palm.
@@ -349,18 +353,65 @@ while True:
                 if (len(pressed_key_buffer) > 20):
                    list = pressed_key_buffer[10:]
                    if all_same(list):              # check if all items inside the list are identical
+                       global input_word
                        input_word += list[0]
                        draw_selected_key(output_image,key_index)
                    pressed_key_buffer.clear()
 
     # write the input word (sheloo 3adi)
     cv2.putText(output_image, input_word, (200, 100), font, 2, hover_line_color, 2)
-    cv2.imshow('V-PAD',output_image)
-    key = cv2.waitKey(30) & 0xff
-    if key == 27: # if the key is esc character break the loop then close the video streaming
-        break
-cap.release()
-cv2.destroyAllWindows()
+    #cv2.imshow('V-PAD',output_image)
+    tk_output_image = cv2.cvtColor(output_image, cv2.COLOR_BGR2RGBA)
+    tk_output_image = Image.fromarray(tk_output_image)
+    tk_output_image = ImageTk.PhotoImage(tk_output_image)
+    video_stream_label.imgtk = tk_output_image
+    video_stream_label.configure(image = tk_output_image)
+    video_stream_label.after(1, mainProcess)
 
+
+
+# create Tkinter window
+root = Tk()
+root.wm_title("V_PAD")
+root.geometry("1280x800")
+
+background_image = PhotoImage(file="/home/mohned/Desktop/hand.png") # TODO (path to a .png photo)
+background_label = Label(root, image=background_image)
+background_label.place(x=0, y=0, relwidth=1, relheight=1)
+root.update()
+root.after(4000,)
+background_label.pack_forget()
+
+
+background_image = PhotoImage(file="/home/mohned/Desktop/img2.png")
+background_label = Label(root, image=background_image)
+background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+video_stream_label = Label(background_label)
+video_stream_label.place(x=30, y=100)
+
+
+var = StringVar()
+text_label = Label(background_label, textvariable=var, font = tkFont.Font(family="Lucida Grande", size=40 ))
+var.set("Hello our client")
+text_label.place(x=800, y=300)
+
+#capture webcam video  
+cap = cv2.VideoCapture(0) # object for the video handle
+cap.set(3, 1920) # change width to 1920 pixels
+cap.set(4, 1080) #change height to 1080 pixels
+cap.set(10, 200) #change brightness to 200
+_,frame=cap.read()
+detection_rec_x0 = int(detection_rec_x_start * frame.shape[1]) # The top left point x value                     
+detection_rec_y0 = int(detection_rec_y_start * frame.shape[0]) # The top left point y value
+detection_rec_x1 = int(detection_rec_x_end * frame.shape[1])   # The bottom right point x value
+detection_rec_y1 = int(detection_rec_y_end * frame.shape[0])   # The bottom right point y value
+detection_rec_height = detection_rec_y1 - detection_rec_y0
+detection_rec_width = detection_rec_x1 - detection_rec_x0
+
+#main loop
+mainProcess()
+
+root.mainloop()
 
    
