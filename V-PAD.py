@@ -3,12 +3,12 @@ import math
 import numpy as np
 import time
 
-#define keypad properties
+# define keypad properties:
 rec_key_width = 100                   # the width of the key rectangle
 rec_key_height = 80                   # the height of the key rectangle
 rec_key_y = 70                        # start y position of key rectangle
-key_rectangle_positions = []          # list for storing the positions of each key rectangle
-key_value_positions = []              # list for storing the positions of the key itself
+key_rectangle_positions = []          # list to store the positions of each key rectangle
+key_value_positions = []              # list to store the positions of the key itself
 pressed_key_buffer = []               # buffer to store the pressed key
 key_actions_dx = 40                   # horizontal distance of the action rectangle from the original keypad
 key_actions_dy = 20                   # vertical distance between the action keys rectangles
@@ -17,6 +17,7 @@ keypad_color = (23,208,253)
 hover_color = (255,0,0)               # keypad keys hover color
 hover_circle_color = (0,200,0)        # circle color that appears when hovering over keypad keys
 hover_line_color = (0,0,0)            # cross color that appear when hovering over keypad keys
+hover_rectangle_color = (255,255,255)
 Enter_button_color = (0,255,0)
 Cancel_button_color = (0,0,255)
 Clear_button_color = (0,255,255)
@@ -32,20 +33,20 @@ detection_rec_color = (255, 0, 0)
 
 # tuning parameters
 # Mothion detection parameters
-bg_sub_threshold = 50             # threshold value of the background subtractor function
+bg_sub_threshold = 50                # threshold value of the background subtractor function
 bg_sub_learning_rate = 0
-gaussian_blur_dim = 41            # GaussianBlur kernel parameter
-threshold = 60                    # Binary threshold
+gaussian_blur_dim = 41               # GaussianBlur kernel parameter
+threshold = 60                       # Binary threshold
 # Hand color detection parameters
-kernel_dim_filter2D = 21          # kernel dimension of 2D filter for masking hand color
-kernel_dim_close = 5              # kernel dimension of morphological close operation
-no_iterations_close = 7           # number of iteration of morphological close operation
+kernel_dim_filter2D = 21             # kernel dimension of 2D filter for masking hand color
+kernel_dim_close = 5                 # kernel dimension of morphological close operation
+no_iterations_close = 7              # number of iteration of morphological close operation
 
 # variables to calculate elapsed time in seconds
 previous_time = 0
 time_in_seconds = 0
-hand_hist_time_limit = 10 # time to perform capture samples of hand color and perform calculate its histogram
-BG_sub_time_limit = 20    # time to perform background subtraction action
+hand_hist_time_limit = 10            # time to perform capture samples of hand color and perform calculate its histogram
+BG_sub_time_limit = 20               # time to perform background subtraction action
 
 # hand histogram samples coordinates
 sample_hist_x = [6.0/20.0, 9.0/20.0, 12.0/20.0]
@@ -111,14 +112,22 @@ def binarizeImage(img):
     _, thresh = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
     return thresh
 
+def draw_keypad_background(frame):
+    key_rec_x0 = int(detection_rec_x_start * frame.shape[1]) + 5
+    key_rec_y0 = rec_key_y
+    key_rec_x1 = key_rec_x0 + (rec_key_width * 3)
+    key_rec_y1 = key_rec_y0 + (rec_key_height * 4)
+    cv2.rectangle(frame,(key_rec_x0,key_rec_y0),(key_rec_x1,key_rec_y1),hover_line_color,-1)
+
 def draw_keypad(frame):
     key_num = 0
     key_actions = ['Cancel','Clear','Enter']
     last_rows_keys = ['','0','']
     if (len(key_rectangle_positions) != 0) and (len(key_value_positions) != 0):
-        key_rectangle_positions.clear()
         key_value_positions.clear()
+        key_rectangle_positions.clear()
 
+    draw_keypad_background(frame)
     # draw the keypad number keys:
     for row in range (4):
         key_rec_x0 = int(detection_rec_x_start * frame.shape[1]) + 5
@@ -167,8 +176,8 @@ def draw_keypad(frame):
             color = Enter_button_color
 
         # draw the actions and its rectangle:
-        cv2.rectangle(frame, (action_rec_x0, action_rec_y0), (action_rec_x1, action_rec_y1), color, 5)
-        cv2.putText(frame, key_actions[i], (action_x_p - 17 , action_y_p), font, 0.75, color, 2)
+        cv2.rectangle(frame, (action_rec_x0, action_rec_y0), (action_rec_x1, action_rec_y1), color, -1)
+        cv2.putText(frame, key_actions[i], (action_x_p - 17 , action_y_p), font, 0.75, (0,0,0), 2)
 
         # store the actions and its rectangle coordinates:
         key_value_positions.append([action_x_p - 17, action_y_p, key_actions[i]])
@@ -231,7 +240,6 @@ def all_same(items):
      return all(x == items[0] for x in items)
 
 def key_pressed(finger_tip_point):
-    is_selected = False
     finger_tip_x = finger_tip_point[0]   ;  finger_tip_y = finger_tip_point[1]
 
     # check if the finger tip point is inside into any key rectangle:
@@ -246,19 +254,22 @@ def key_pressed(finger_tip_point):
 
 def draw_selected_key(frame,key_index):
     key_info = key_value_positions[key_index]
-    key_x_p = key_info[0]
-    key_y_p = key_info[1]
-    key_value = key_info[2]
-    for i in range (5):
-        for j in range (5):
-           cv2.putText(frame, key_value, (key_x_p, key_y_p), font, 1.5, hover_color, 3)
+    key_rectangle_info = key_rectangle_positions[key_index]
+    for i in range (12):
+        for j in range (12):
+           cv2.rectangle(frame, key_rectangle_info[0], key_rectangle_info[1], hover_rectangle_color, -1)
+           if len(str(key_info[0])) > 1:
+               cv2.putText(frame, key_info[2], (key_info[0], key_info[1]), font, 0.75, hover_color, 2)
+           else:
+               cv2.putText(frame, key_info[2], (key_info[0], key_info[1]), font, 1.5, hover_color, 3)
 
-#capture webcam video  
-cap = cv2.VideoCapture(0) # object for the video handle
-cap.set(3, 1920) # change width to 1920 pixels
-cap.set(4, 1080) #change height to 1080 pixels
-cap.set(10, 200) #change brightness to 200
-#main loop
+# capture webcam video
+cap = cv2.VideoCapture(0)     # object for the video handle
+cap.set(3, 1920)              # change width to 1920 pixels
+cap.set(4, 1080)              # change height to 1080 pixels
+cap.set(10, 200)              # change brightness to 200
+
+# main loop
 while True:
     _,frame=cap.read()
     frame = cv2.flip(frame, 1) # 1 for flipping around the y-axis
@@ -307,19 +318,19 @@ while True:
         # create a mask of the hand using hand color histogram
         hist_mask = histMasking(roi, hand_hist)
         hist_mask = binarizeImage(hist_mask)
-        cv2.imshow("Histogram Mask",hist_mask)
+        #cv2.imshow("Histogram Mask",hist_mask)
 
         # create a mask of the hand using background subtraction
         mov_obj_mask = cropMovingObject(roi)
         mov_obj_mask = binarizeImage(mov_obj_mask)
-        cv2.imshow("Motion Mask",mov_obj_mask)
+        #cv2.imshow("Motion Mask",mov_obj_mask)
 
         # and the 2 masks to detect the moving hand
         hand_mask = cv2.bitwise_and(hist_mask, mov_obj_mask)
-        cv2.imshow("Hand Mask", hand_mask)
+        #cv2.imshow("Hand Mask", hand_mask)
 
         # Find the contours of the hand mask:
-        _,contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if len(contours) > 0:
             max_contour = max(contours, key=cv2.contourArea)          # hand palm is the largest contour area.
             center = contour_centroid(max_contour)                    # Find the center of the hand palm.
