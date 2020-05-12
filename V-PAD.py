@@ -66,6 +66,11 @@ hand_hist = None
 # create a string for the entered number
 input_word = ''
 
+#Saved Password
+password='7854'
+
+#flag for submitting password
+password_entered=FALSE
 
 def createHandHSVHistogram(frame):
     HSV_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -285,9 +290,12 @@ def mainProcess():
         # the background subtraction hasn't been performed
         global time_in_seconds
         if time_in_seconds < hand_hist_time_limit:
+            var.set("Please position your hand on the green rectangle till it disappears\nPlease ONLY position your hand and move away your face\nDO NOT move your hand")
             x0, y0 = int(sample_hist_x[0]*frame.shape[0]), int(sample_hist_y[0]*frame.shape[1]) + (detection_rec_width // 2) -10 
             cv2.rectangle(output_image,(y0, x0),(y0 + 84,x0 + 116),hand_hist_rec_color, 1)
         elif time_in_seconds > hand_hist_time_limit and time_in_seconds < BG_sub_time_limit:
+            text_label.place(x=700, y=300)
+            var.set("Please move away from area inbounded in the blue rectangle\n In order to detect your surrounding Environment")
             cv2.rectangle(output_image,(detection_rec_x0,detection_rec_y0),(detection_rec_x1, detection_rec_y1),
                   detection_rec_color, 2)
         current_time = round(time.perf_counter())
@@ -313,6 +321,44 @@ def mainProcess():
             print(time_in_seconds)
         previous_time = current_time
     else:
+        global input_word
+        global password_entered
+        
+        text_label.place(x=800, y=300)
+        var.set("Please insert your Bank Card\nAnd Enter your Password")
+        text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
+
+        if(input_word!=''):
+            inputPass.set(input_word)
+            text_label2.config(font=tkFont.Font(family="Lucida Grande", size=25 ))
+            text_label2.place(x=900, y=500)
+
+        if(len(input_word)==4):
+            password_entered=TRUE
+        else:
+            password_entered=FALSE
+        if(password_entered):
+            if(len(input_word)==4):
+                if(input_word==password):
+                    text_label2.place(x=800, y=400)
+                    inputPass.set("Password entered Successfully")
+                    input_word=''
+
+                    
+                else:
+                    text_label2.place(x=800, y=400)
+                    inputPass.set("Wrong Password")
+                    input_word=''
+                    password_entered=FALSE
+                    
+                
+            else:
+                text_label2.place(x=800, y=400)
+                inputPass.set("Invalid Password Length\n Password should be 4 digits")
+                input_word=''
+                password_entered=FALSE
+                
+            
         # Draw the keypad:
         draw_keypad(output_image)
         # then the hand histogram is created and the background subtraction is performed
@@ -334,7 +380,7 @@ def mainProcess():
         #cv2.imshow("Hand Mask", hand_mask)
 
         # Find the contours of the hand mask:
-        _,contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if len(contours) > 0:
             max_contour = max(contours, key=cv2.contourArea)          # hand palm is the largest contour area.
             center = contour_centroid(max_contour)                    # Find the center of the hand palm.
@@ -353,7 +399,6 @@ def mainProcess():
                 if (len(pressed_key_buffer) > 20):
                    list = pressed_key_buffer[10:]
                    if all_same(list):              # check if all items inside the list are identical
-                       global input_word
                        input_word += list[0]
                        draw_selected_key(output_image,key_index)
                    pressed_key_buffer.clear()
@@ -375,7 +420,7 @@ root = Tk()
 root.wm_title("V_PAD")
 root.geometry("1280x800")
 
-background_image = PhotoImage(file="/home/mohned/Desktop/hand.png") # TODO (path to a .png photo)
+background_image = PhotoImage(file="hand.png") # TODO (path to a .png photo)
 background_label = Label(root, image=background_image)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 root.update()
@@ -383,7 +428,7 @@ root.after(4000,)
 background_label.pack_forget()
 
 
-background_image = PhotoImage(file="/home/mohned/Desktop/img2.png")
+background_image = PhotoImage(file="img2.png")
 background_label = Label(root, image=background_image)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -392,9 +437,11 @@ video_stream_label.place(x=30, y=100)
 
 
 var = StringVar()
-text_label = Label(background_label, textvariable=var, font = tkFont.Font(family="Lucida Grande", size=40 ))
-var.set("Hello our client")
-text_label.place(x=800, y=300)
+text_label = Label(background_label, textvariable=var, font = tkFont.Font(family="Lucida Grande", size=15 ))
+text_label.place(x=690, y=300)
+
+inputPass = StringVar()
+text_label2 = Label(background_label, textvariable=inputPass, font = tkFont.Font(family="Lucida Grande", size=15 ))
 
 #capture webcam video  
 cap = cv2.VideoCapture(0) # object for the video handle
