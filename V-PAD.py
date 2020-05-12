@@ -401,11 +401,16 @@ def mainProcess():
             if button_action == 'Enter':
                 password_entered = True
                 button_action=''
+            if button_action == 'Clear':
+                input_word=''
+                inputPass.set(input_word)
+                button_action=''
+            if button_action == 'Cancel':
+                root.destroy()
             if input_word!='' :
                 inputPass.set(input_word)
                 text_label2.config(font=tkFont.Font(family="Lucida Grande", size=25 ))
                 text_label2.place(x=900, y=500)
-                print(input_word)
             if password_entered :
                 if len(input_word)==4 :
                     if input_word == password :
@@ -455,6 +460,12 @@ def mainProcess():
             if button_action == 'Enter':
                 money_entered = True
                 button_action=''
+            if button_action == 'Clear':
+                input_word=''
+                inputPass.set(input_word)
+                button_action=''
+            if button_action == 'Cancel':
+                root.destroy()
             if money_entered :
                 if int(input_word) <= Balance :
                     text_label2.place(x=850, y=400)
