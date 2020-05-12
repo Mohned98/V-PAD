@@ -35,10 +35,10 @@ sample_hist_y = [9.0/20.0, 10.0/20.0, 11.0/20.0]
 
 # Detection Rectangle properties
 # detection rectangle coordinates percentage of total width and height
-detection_rec_x_start = 0.48
-detection_rec_x_end = 1
-detection_rec_y_start = 0.0
-detection_rec_y_end = 0.9
+detection_rec_x_start = 0.5
+detection_rec_x_end = 0.98
+detection_rec_y_start = 0.04
+detection_rec_y_end = 0.86
 # detection rectangle color
 detection_rec_color = (255, 0, 0)
 
@@ -69,11 +69,11 @@ no_iterations_close = 7 # number of iteration of morphological close operation
 # variables to calculate elapsed time in seconds
 previous_time = 0
 time_in_seconds = 0
-hand_hist_time_limit = 10 # time to perform capture samples of hand color and perform calculate its histogram
-BG_sub_time_limit = 20    # time to perform background subtraction action
+hand_hist_time_limit = 4 # time to perform capture samples of hand color and perform calculate its histogram
+BG_sub_time_limit = 8    # time to perform background subtraction action
 
 # Number of milliseconds the welcome page waits
-welPage_delay = 3000
+welPage_delay = 2000
 
 # Phases indication flags 
 fgbg = None      # for foreground subtraction handling
@@ -171,7 +171,7 @@ def binarizeImage(img):
     return thresh
 
 def draw_keypad_background(frame):
-    key_rec_x0 = int(detection_rec_x_start * frame.shape[1]) + keypad_distance_from_border
+    key_rec_x0 = int(detection_rec_x_start * frame.shape[1]) 
     key_rec_y0 = rec_key_y
     key_rec_x1 = key_rec_x0 + (rec_key_width * 3)
     key_rec_y1 = key_rec_y0 + (rec_key_height * 4)
@@ -188,7 +188,7 @@ def draw_keypad(frame):
     draw_keypad_background(frame)
     # draw the keypad number keys:
     for row in range (4):
-        key_rec_x0 = int(detection_rec_x_start * frame.shape[1]) + keypad_distance_from_border
+        key_rec_x0 = int(detection_rec_x_start * frame.shape[1])
         key_rec_y0 = rec_key_y + row * rec_key_height
         key_rec_x1 = key_rec_x0 + rec_key_width
         key_rec_y1 = key_rec_y0 + rec_key_height
@@ -214,7 +214,7 @@ def draw_keypad(frame):
            key_rec_x1 = key_rec_x0 + rec_key_width
 
 
-    action_rec_x0 = int(detection_rec_x_start * frame.shape[1]) + keypad_distance_from_border
+    action_rec_x0 = int(detection_rec_x_start * frame.shape[1])
     action_rec_y0 = rec_key_y + (4 * rec_key_height)
     # draw the key actions:
     for i in range (3):
@@ -514,7 +514,7 @@ def mainProcess():
         #cv2.imshow("Hand Mask", hand_mask)
 
         # Find the contours of the hand mask:
-        contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        _,contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if len(contours) > 0:
             max_contour = max(contours, key=cv2.contourArea)          # hand palm is the largest contour area.
             center = contour_centroid(max_contour)                    # Find the center of the hand palm.
@@ -553,7 +553,7 @@ root = Tk()
 root.wm_title("V_PAD")
 root.geometry("1280x800")
 
-background_image = PhotoImage(file="hand.png")
+background_image = PhotoImage(file="/home/mohned/Desktop/V-PAD/hand.png")
 background_label = Label(root, image=background_image)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 root.update()
@@ -561,7 +561,7 @@ root.after(welPage_delay,)
 background_label.pack_forget()
 
 
-background_image = PhotoImage(file="img2.png")
+background_image = PhotoImage(file="/home/mohned/Desktop/V-PAD/img2.png")
 background_label = Label(root, image=background_image)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
