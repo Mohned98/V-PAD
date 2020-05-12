@@ -202,16 +202,17 @@ def draw_keypad(frame):
 
 
     action_rec_x0 = int(detection_rec_x_start * frame.shape[1])
-    action_rec_y0 = rec_key_y + (4 * rec_key_height)
+    action_rec_y0 = rec_key_y + (4 * rec_key_height) + 15
+    key_height = 50
     # draw the key actions:
     for i in range (3):
         # the rectangle coordinates of the key actions:
         action_rec_x1 = action_rec_x0 + rec_key_width
-        action_rec_y1 = action_rec_y0 + rec_key_height
+        action_rec_y1 = action_rec_y0 + key_height
 
         # The action key coordinates:
         action_x_p = action_rec_x0 + int(rec_key_width /3)
-        action_y_p = action_rec_y0 + int(rec_key_height /1.5)
+        action_y_p = action_rec_y0 + int(rec_key_height /2)
 
         # Action key color:
         if (i == 0):
@@ -222,6 +223,7 @@ def draw_keypad(frame):
             color = Enter_button_color
 
         # draw the actions and its rectangle:
+        cv2.rectangle(frame, (action_rec_x0, action_rec_y0), (action_rec_x1, action_rec_y1), (0,0,0), 3)
         cv2.rectangle(frame, (action_rec_x0, action_rec_y0), (action_rec_x1, action_rec_y1), color, -1)
         cv2.putText(frame, key_actions[i], (action_x_p - 17 , action_y_p), font, 0.75, (0,0,0), 2)
 
