@@ -19,7 +19,7 @@ key_actions_dy = 300                  # vertical distance of the action rectangl
 keypad_distance_from_border = 10      # horizontal distance between rectangle border and keypad
 font = cv2.FONT_HERSHEY_SIMPLEX       # Font type
 keypad_color = (23,208,253)           # Keypad border and keys color
-keypad_bg_color = (0,0,0)
+keypad_bg_color = (0,0,0)             # Keypad background color
 hover_color = (255,0,0)               # keypad keys hover color
 hover_circle_color = (0,128,255)      # circle color that appears when hovering over keypad keys
 hover_line_color = (0,0,0)            # cross color that appear when hovering over keypad keys
@@ -45,10 +45,12 @@ detection_rec_color = (255, 0, 0)
 
 
 # Withdraw and Deposit buttons coordinates and properties:
-button_width = 110
-button_height = 50
-xdistance_between_buttons = 70
-height_from_txt = 180
+button_width = 110                   # the width of the button
+button_height = 50                   # the height of the button
+xdistance_between_buttons = 70       # horizontal distance between the withdraw and deposit buttons.
+height_from_txt = 180                # the vertical distance from the text.
+button_border_color = (23,208,253)   # button border color
+button_bg_color = (0,0,0)            # button background color
 
 
 # Variables to calculate the finger tip point:
@@ -58,26 +60,26 @@ closest_x_margin = 4                # closest horizontal distance finger tip poi
 
 # tuning parameters
 # Mothion detection parameters
-bg_sub_threshold = 50 # threshold value of the background subtractor function
+bg_sub_threshold = 50                # threshold value of the background subtractor function
 bg_sub_learning_rate = 0
-gaussian_blur_dim = 41 # GaussianBlur kernel parameter
-threshold = 60 # Binary threshold
+gaussian_blur_dim = 41               # GaussianBlur kernel parameter
+threshold = 60                       # Binary threshold
 # Hand color detection parameters
-kernel_dim_filter2D = 21 # kernel dimension of 2D filter for masking hand color
-kernel_dim_close = 5 # kernel dimension of morphological close operation 
-no_iterations_close = 7 # number of iteration of morphological close operation
+kernel_dim_filter2D = 21             # kernel dimension of 2D filter for masking hand color
+kernel_dim_close = 5                 # kernel dimension of morphological close operation 
+no_iterations_close = 7              # number of iteration of morphological close operation
 
 # variables to calculate elapsed time in seconds
 previous_time = 0
 time_in_seconds = 0
-hand_hist_time_limit = 7 # time to perform capture samples of hand color and perform calculate its histogram
-BG_sub_time_limit = 14    # time to perform background subtraction action
+hand_hist_time_limit = 7              # time to perform capture samples of hand color and perform calculate its histogram
+BG_sub_time_limit = 14                # time to perform background subtraction action
 
 # Number of milliseconds the welcome page waits
 welPage_delay = 2000
 
-fgbg = None      # for foreground subtraction handling
-hand_hist = None # for calculating hand histigram
+fgbg = None                           # for foreground subtraction handling
+hand_hist = None                      # for calculating hand histigram
 
 # Phases indication flags 
 BG_captured = False
@@ -239,7 +241,7 @@ def draw_keypad(frame):
         action_rec_x0 = action_rec_x1         #update the x coordinates of the actions' buttons.
 
 def draw_deposit_withdraw_buttons(frame):
-    # clear the buffer to store agian the keypad coordinates
+    # clear the buffer to store agian the new coordinates
     if (len(key_rectangle_positions) != 0) and (len(key_value_positions) != 0):
         key_value_positions.clear()
         key_rectangle_positions.clear()
@@ -256,9 +258,9 @@ def draw_deposit_withdraw_buttons(frame):
        action_y_p = rec_y0 + int(button_height/1.5)
 
        # draw the actions' buttons
-       cv2.rectangle(frame, (rec_x0, rec_y0), (rec_x0 + button_width, rec_y0 + button_height), keypad_color, 3)
-       cv2.rectangle(frame,(rec_x0,rec_y0),(rec_x0 + button_width,rec_y0 + button_height),hover_line_color,-1)
-       cv2.putText(frame, action_keys[i], (action_x_p - 13, action_y_p), font, 0.75, keypad_color, 2)
+       cv2.rectangle(frame, (rec_x0, rec_y0), (rec_x0 + button_width, rec_y0 + button_height), button_border_color, 3)
+       cv2.rectangle(frame,(rec_x0,rec_y0),(rec_x0 + button_width,rec_y0 + button_height),button_bg_color,-1)
+       cv2.putText(frame, action_keys[i], (action_x_p - 13, action_y_p), font, 0.75, button_border_color, 2)
 
        # Store the key and its buttons coordinates
        key_rectangle_positions.append([(rec_x0,rec_y0),(rec_x0 + button_width,rec_y0 + button_height),action_keys[i]])
@@ -270,7 +272,7 @@ def draw_deposit_withdraw_buttons(frame):
            rec_y0 = rec_y0 - 100
            
 def draw_back_button(frame):
-    # clear the buffer to store agian the keypad coordinates
+    # clear the buffer to store agian the new coordinates
     if (len(key_rectangle_positions) != 0) and (len(key_value_positions) != 0):
         key_value_positions.clear()
         key_rectangle_positions.clear()
@@ -289,10 +291,12 @@ def draw_back_button(frame):
     cv2.rectangle(frame, (rec_x0, rec_y0), (rec_x0 + button_width, rec_y0 + button_height), hover_line_color, -1)
     cv2.putText(frame, button, (action_x_p - 13, action_y_p), font, 0.75, keypad_color, 2)
     
-    # store the coordinates:
+    # store the back button coordinates:
     key_rectangle_positions.append([(rec_x0, rec_y0), (rec_x0 + button_width, rec_y0 + button_height),button])
     key_value_positions.append([action_x_p, action_y_p,button])
+    
 def contour_centroid(contour):
+    # Calculate the center point of the contour.
     moments = cv2.moments(contour)
     if moments['m00'] != 0:
         cx = int(moments['m10'] / moments['m00'])
@@ -314,7 +318,7 @@ def get_fingertip (defects_start_points,contour,centroid,frame_shape):
     Xpoints_subtract_Xcenter = cv2.pow(cv2.subtract(x, cx), 2)
     Ypoints_subtract_Ycenter = cv2.pow(cv2.subtract(y, cy), 2)
     distance = cv2.sqrt(cv2.add(Xpoints_subtract_Xcenter, Ypoints_subtract_Ycenter))
-    max_distance_index = np.argmax(distance)              # fingertip point locates at the most distance from the center
+    max_distance_index = np.argmax(distance)              # fingertip point locates at the most distance from the center hand palm
     if max_distance_index < len(defects_start_points):
         finger_tip_index = defects_start_points[max_distance_index]
         finger_tip_x = contour[finger_tip_index][0][0]
@@ -323,12 +327,14 @@ def get_fingertip (defects_start_points,contour,centroid,frame_shape):
     # if fingertip point lies below the hand contour center point:
     if finger_tip_y > cy:
         find_finger_tip = False
+        # Find all points that it is a distance from the center equal farthest_x_margin (right/left) 
         for index in range(len(x)):
             x_p = int(x[index])
             y_p = int(y[index])
             if (x_p > cx -farthest_x_margin) and (x_p < cx + farthest_x_margin) and (y_p < cy):
                 farthest_points.append((x_p, y_p))
-
+       
+        # then find from the farthest points the closest one from the center and lies up to the center of the hand palm.
         for j in range(3):
             closest_x = closest_x_margin + j * 4
             for i in range(len(farthest_points)):
@@ -338,6 +344,7 @@ def get_fingertip (defects_start_points,contour,centroid,frame_shape):
                     break
             if find_finger_tip:
                 break
+                
     # update the finger tip point coordinate within the detection rectangle coordinates.
     finger_tip_x += int(detection_rec_x_start * frame_shape[1])
     finger_tip_y += int(detection_rec_y_start * frame_shape[0])
@@ -345,26 +352,30 @@ def get_fingertip (defects_start_points,contour,centroid,frame_shape):
     return finger_tip
 
 def all_same(items):
+     # return true if all elements inside the list are identical, else return false.
      return all(x == items[0] for x in items)
 
 def key_pressed(finger_tip_point):
     finger_tip_x = finger_tip_point[0]   ;  finger_tip_y = finger_tip_point[1]
 
-    # check if the finger tip point is inside into any key rectangle:
+    # check if the finger tip point is inside into any key rectangle (button):
     for i in range (len(key_rectangle_positions)):
         key_info = key_rectangle_positions[i]
         key_rec_x0 = key_info[0][0]  ;   key_rec_y0 = key_info[0][1]
         key_rec_x1 = key_info[1][0]  ;   key_rec_y1 = key_info[1][1]
         selected_key = key_info[2]
         if (finger_tip_x > key_rec_x0) and (finger_tip_x < key_rec_x1) and (finger_tip_y > key_rec_y0) and  (finger_tip_y < key_rec_y1):
+            # save the pressed key inside the buffer at each frame to decide that it's selected after 20 frames.
             pressed_key_buffer.append(selected_key)
-            return i
+            return i                                 #then return the its index
 
 def draw_selected_key(frame,key_index):
+    # retrieve the key info (key value and its button coordinates)
     key_info = key_value_positions[key_index]
     key_rectangle_info = key_rectangle_positions[key_index]
     for i in range (12):
         for j in range (12):
+           # draw the key pressed hover
            cv2.rectangle(frame, key_rectangle_info[0], key_rectangle_info[1], hover_rectangle_color, -1)
            if len(key_info[2]) > 1:
                cv2.putText(frame, key_info[2], (key_info[0], key_info[1]), font, 0.75, hover_color, 2)
