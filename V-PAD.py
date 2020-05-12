@@ -348,8 +348,6 @@ def mainProcess():
     output_image = cv2.bilateralFilter(output_image, 5, 50, 100) #smoothing filter
     global BG_captured
     global hand_hist_detected
-    cv2.rectangle(output_image,(detection_rec_x0,detection_rec_y0),(detection_rec_x1, detection_rec_y1),
-                  detection_rec_color, 2)
     if BG_captured == False :
         # then the time hasn't reached yet its limit value so either 
         # the hand histogram hasn't been created yet or 
@@ -472,11 +470,6 @@ def mainProcess():
             var.set("Your current Balance is:\n"+str(Balance)+".00 EGP")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
             
-
-        # Draw the keypad:
-        draw_keypad(output_image)
-        #draw_deposit_withdraw_buttons(output_image)
-
         # then the hand histogram is created and the background subtraction is performed
         roi = frame[detection_rec_y0:detection_rec_y0 + detection_rec_height,
                            detection_rec_x0:detection_rec_x0 + detection_rec_width]
