@@ -68,19 +68,21 @@ no_iterations_close = 7 # number of iteration of morphological close operation
 # variables to calculate elapsed time in seconds
 previous_time = 0
 time_in_seconds = 0
-hand_hist_time_limit = 10 # time to perform capture samples of hand color and perform calculate its histogram
-BG_sub_time_limit = 20    # time to perform background subtraction action
+hand_hist_time_limit = 4 # time to perform capture samples of hand color and perform calculate its histogram
+BG_sub_time_limit = 8   # time to perform background subtraction action
 
 # Number of milliseconds the welcome page waits
-welPage_delay = 3000
+welPage_delay = 2000
 
-# Phases indication flags 
 fgbg = None      # for foreground subtraction handling
 hand_hist = None # for calculating hand histigram
 
-fgbg = None
-hand_hist = None 
+# Phases indication flags 
+BG_captured = False
+hand_hist_detected = False
 
+# action of the pressed button 'Withdraw' , 'Deposit' , 'Cancel' , 'Clear' or 'Enter'
+button_action = ''
 # create a string for the entered number
 input_word = ''
 
@@ -91,16 +93,7 @@ password='7854'
 password_entered=FALSE
 
 #current page for user (PasswordPage=1, ChooseService=2, Deposit=3, Withdraw=4, Inquiry=5)
-currentPage=1
-
-#flag for choosing Desposit
-deposit_chosen=FALSE
-
-#flag for choosing Withdraw
-withdraw_chosen=FALSE
-
-#flag for choosing Balance Inquiry
-inquiry_chosen=FALSE
+currentPage = 1
 
 #Flag for completing deposit
 deposit_done=FALSE
@@ -390,24 +383,22 @@ def mainProcess():
         global input_word
         global password_entered
         global money_entered
-        global deposit_chosen
-        global withdraw_chosen
-        global inquiry_chosen
-        global transaction_done
+        global button_action
+        #global transaction_done
         global currentPage
-        global Balance
-        if(currentPage==1):
+        if currentPage == 1 :
+            # Draw the keypad:
+            draw_keypad(output_image)
             text_label.place(x=800, y=300)
             var.set("Please insert your Bank Card\nAnd Enter your Password")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
-            if(input_word!=''):
+            if input_word!='' :
                 inputPass.set(input_word)
                 text_label2.config(font=tkFont.Font(family="Lucida Grande", size=25 ))
-                text_label2.place(x=900, y=500)
-                    
-            if(password_entered):
-                if(len(input_word)==4):
-                    if(input_word==password):
+                text_label2.place(x=900, y=500)      
+            if password_entered :
+                if len(input_word)==4 :
+                    if input_word==password :
                         text_label2.place(x=800, y=400)
                         inputPass.set("Password entered Successfully")
                         input_word=''
@@ -423,20 +414,34 @@ def mainProcess():
                     input_word=''
                     password_entered=FALSE
                     
-        elif(currentPage==2):
+        elif currentPage==2 :
+            draw_deposit_withdraw_buttons(output_image)
             inputPass.set('')
             text_label.place(x=720, y=300)
             var.set("Please Choose a service of your desire")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
 
-            if(deposit_chosen):
+            if button_action == 'Deposit' :
                 currentPage=3
-            if(withdraw_chosen):
+            if button_action == 'Withdraw' :
                 currentPage=4
-            if(inquiry_chosen):
+            if button_action == 'Inquiry' :
                 currentPage=5
 
-        elif(currentPage==4):
+        elif currentPage == 3 :
+            inputPass.set('')
+            text_label.place(x=750, y=300)
+            var.set("Please Insert only notes of 100,50,20\nNotes of 10 and 5 are not allowed")
+            text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
+            
+            if deposit_done :
+                text_label2.place(x=850, y=400)
+                inputPass.set("Transaction Done\nHave a nice Day")
+                input_word=''
+
+        elif currentPage == 4 :
+            # Draw the keypad:
+            draw_keypad(output_image)
             text_label.place(x=750, y=300)
             var.set("Please enter the amount of money\nyou wish to withdraw")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
@@ -445,8 +450,8 @@ def mainProcess():
                 text_label2.config(font=tkFont.Font(family="Lucida Grande", size=25 ))
                 text_label2.place(x=900, y=500)
                 
-            if(money_entered):
-                if(int(input_word)<=Balance):
+            if money_entered :
+                if int(input_word) <= Balance :
                     text_label2.place(x=850, y=400)
                     inputPass.set("Transaction Done\nHave a nice Day")
                     input_word=''
@@ -456,26 +461,13 @@ def mainProcess():
                     inputPass.set("Exceeding Balance\n Please enter an amount within your balance\n "+str(Balance)+".00 EGP")
                     input_word=''
                     money_entered=FALSE
-                    
-        elif(currentPage==3):
-            inputPass.set('')
-            text_label.place(x=750, y=300)
-            var.set("Please Insert only notes of 100,50,20\nNotes of 10 and 5 are not allowed")
-            text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
-            
-            if(deposit_done):
-                text_label2.place(x=850, y=400)
-                inputPass.set("Transaction Done\nHave a nice Day")
-                input_word=''
-            
-        elif(currentPage==5):
+                        
+        elif currentPage == 5 :
             inputPass.set('')
             text_label.place(x=850, y=300)
             var.set("Your current Balance is:\n"+str(Balance)+".00 EGP")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
             
-        # Draw the keypad:
-        draw_keypad(output_image)
         # then the hand histogram is created and the background subtraction is performed
         roi = frame[detection_rec_y0:detection_rec_y0 + detection_rec_height,
                            detection_rec_x0:detection_rec_x0 + detection_rec_width]
@@ -495,7 +487,7 @@ def mainProcess():
         #cv2.imshow("Hand Mask", hand_mask)
 
         # Find the contours of the hand mask:
-        contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        _,contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if len(contours) > 0:
             max_contour = max(contours, key=cv2.contourArea)          # hand palm is the largest contour area.
             center = contour_centroid(max_contour)                    # Find the center of the hand palm.
@@ -512,10 +504,13 @@ def mainProcess():
                 # find the key pressed and write it:
                 key_index = key_pressed(fingertip_point)
                 # if a key has been selected for 10 frames, write the key and clear the buffer
-                if (len(pressed_key_buffer) > 15):
+                if len(pressed_key_buffer) > 15 :
                    list = pressed_key_buffer[5:]
                    if all_same(list):              # check if all items inside the list are identical
-                       input_word += list[0]
+                       if len(list[0]) == 1:
+                           input_word += list[0]
+                       else:
+                           button_action = list[0]
                        draw_selected_key(output_image,key_index)
                    pressed_key_buffer.clear()
 
@@ -534,7 +529,7 @@ root = Tk()
 root.wm_title("V_PAD")
 root.geometry("1280x800")
 
-background_image = PhotoImage(file="hand.png")
+background_image = PhotoImage(file="/home/mohned/Desktop/V-PAD/hand.png")
 background_label = Label(root, image=background_image)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 root.update()
@@ -542,7 +537,7 @@ root.after(welPage_delay,)
 background_label.pack_forget()
 
 
-background_image = PhotoImage(file="img2.png")
+background_image = PhotoImage(file="/home/mohned/Desktop/V-PAD/img2.png")
 background_label = Label(root, image=background_image)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
