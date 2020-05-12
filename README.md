@@ -17,8 +17,20 @@ As a prototype for the project, we will mainly focus on implementing an ATM-simi
 
 ### Implementation Details: 
 #### User Interface: 
-The project aims to provide a new and revolutionary user interface that is seamless to use while at the same time provides a hygienic standard that was mistakenly overlooked in today’s user interfaces. 
-#### Technologies used:
-The implementation would mainly use image processing technologies like OpenCV library to detect the hand and finger movement, in addition to the gestures of the user. Additional libraries or technologies may be added later to implement the needed functionalities. 
+- The project aims to provide a new and revolutionary user interface that is seamless to use while at the same time provides a hygienic standard that was mistakenly overlooked in today’s user interfaces.
+- We used Tkinter Python framework to implememt the GUI part of our project
+#### Algorithms used:
+The implementation would mainly use image processing technologies like OpenCV library to detect the hand and finger movement by mainly 2 steps:
+- HSV Segmentation 
+ In HSV (Hue, Saturation, Value) segmentation, the idea is to segment the hand based on the color. At first, we will sample the color of the hand. The reason for using HSV rather than RGB to eliminate the brightness because this is an issue when we detect the hand because the hand has to be under the same brightness in order to be detected. The brightness of a color is encoded in the Value (V) in the HSV. Hence, when we sample the color of the hand, we sample only the Hue (H) and Saturation (S)
+ 
+handHist = cv2.calcHist([ROI], [0, 1], None, [180, 256], [0, 180, 0, 256])
+  
+- Background subtraction
+we need to have a background image (without the hand) first. To find the hand, we can subtract the image with hand from the background.
+
+fgbg = cv2.createBackgroundSubtractorMOG2(0,bg_sub_threshold)
+
+then subtract the background form the frame for each input one to extract the hand mask
 #### Outputs and Inputs: 
 The GUI will output for the user a keypad with the needed functionalities on the screen and a live video of the camera’s feed at any time. The user will use his/her hand and finger gestures to interact with the keypad. Specific detected gestures will be considered as inputs for the system. 
