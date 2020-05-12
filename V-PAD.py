@@ -21,8 +21,8 @@ font = cv2.FONT_HERSHEY_SIMPLEX       # Font type
 keypad_color = (23,208,253)           # Keypad border and keys color
 keypad_bg_color = (0,0,0)
 hover_color = (255,0,0)               # keypad keys hover color
-hover_circle_color = (0,128,255)        # circle color that appears when hovering over keypad keys
-hover_line_color = (0,0,0)      # cross color that appear when hovering over keypad keys
+hover_circle_color = (0,128,255)      # circle color that appears when hovering over keypad keys
+hover_line_color = (0,0,0)            # cross color that appear when hovering over keypad keys
 hover_rectangle_color = (255,255,255) # rectangle key hover color 
 Enter_button_color = (0,255,0)        # actions buttons color
 Cancel_button_color = (0,0,255)
@@ -52,9 +52,9 @@ height_from_txt = 180
 
 
 # Variables to calculate the finger tip point:
-previous_fingertip_point = (0,0)
-farthest_x_margin = 80
-closest_x_margin = 4
+previous_fingertip_point = (0,0)    # Previous Finger tip point
+farthest_x_margin = 80              # farthest horizontal distance finger tip points form the center of the contour
+closest_x_margin = 4                # closest horizontal distance finger tip points from the center of the contour
 
 # tuning parameters
 # Mothion detection parameters
@@ -159,16 +159,20 @@ def binarizeImage(img):
     return thresh
 
 def draw_keypad_background(frame):
+    # determine the coordinates of the key background area. 
     key_rec_x0 = int(detection_rec_x_start * frame.shape[1]) 
     key_rec_y0 = rec_key_y
     key_rec_x1 = key_rec_x0 + (rec_key_width * 3)
     key_rec_y1 = key_rec_y0 + (rec_key_height * 4)
+    
+    # Draw the keypad background area with black color.
     cv2.rectangle(frame,(key_rec_x0,key_rec_y0),(key_rec_x1,key_rec_y1),keypad_bg_color,-1)
 
 def draw_keypad(frame):
-    key_num = 0
-    key_actions = ['Cancel','Clear','Enter']
+    key_num = 0                                      # intialize the key num value
+    key_actions = ['Cancel','Clear','Enter']         # store the key actions
     last_rows_keys = ['','0','']
+    # clear the buffer to store agian the keypad coordinates
     if (len(key_rectangle_positions) != 0) and (len(key_value_positions) != 0):
         key_value_positions.clear()
         key_rectangle_positions.clear()
@@ -201,13 +205,13 @@ def draw_keypad(frame):
            key_rec_x0 = key_rec_x1
            key_rec_x1 = key_rec_x0 + rec_key_width
 
-
+    # start coordinates of the actions buttons
     action_rec_x0 = int(detection_rec_x_start * frame.shape[1])
     action_rec_y0 = rec_key_y + (4 * rec_key_height) + 15
     key_height = 50
     # draw the key actions:
     for i in range (3):
-        # the rectangle coordinates of the key actions:
+        # the button coordinates of the key actions:
         action_rec_x1 = action_rec_x0 + rec_key_width
         action_rec_y1 = action_rec_y0 + key_height
 
@@ -228,20 +232,21 @@ def draw_keypad(frame):
         cv2.rectangle(frame, (action_rec_x0, action_rec_y0), (action_rec_x1, action_rec_y1), color, -1)
         cv2.putText(frame, key_actions[i], (action_x_p - 17 , action_y_p), font, 0.75, (0,0,0), 2)
 
-        # store the actions and its rectangle coordinates:
+        # store the actions and its buttons coordinates:
         key_value_positions.append([action_x_p - 17, action_y_p, key_actions[i]])
         key_rectangle_positions.append([(action_rec_x0,action_rec_y0), (action_rec_x1,action_rec_y1), key_actions[i]])
 
-        action_rec_x0 = action_rec_x1
+        action_rec_x0 = action_rec_x1         #update the x coordinates of the actions' buttons.
 
 def draw_deposit_withdraw_buttons(frame):
+    # clear the buffer to store agian the keypad coordinates
     if (len(key_rectangle_positions) != 0) and (len(key_value_positions) != 0):
         key_value_positions.clear()
         key_rectangle_positions.clear()
-
     #txt_point = (int(detection_rec_x_start * frame.shape[1]) + 45, rec_key_y + 100)
     #cv2.putText(frame,"Payment Process",txt_point,font,1.5,hover_line_color,3)
-
+    
+    # Start coordinates of the withdraw/Deposit/Inquiry buttons
     rec_x0 = int(detection_rec_x_start * frame.shape[1]) + 10
     rec_y0 = rec_key_y + height_from_txt
     action_keys = ['Withdraw','Deposit','Inquiry']
@@ -250,12 +255,12 @@ def draw_deposit_withdraw_buttons(frame):
        action_x_p = rec_x0 + int(button_width /6)
        action_y_p = rec_y0 + int(button_height/1.5)
 
-       # draw the buttons
+       # draw the actions' buttons
        cv2.rectangle(frame, (rec_x0, rec_y0), (rec_x0 + button_width, rec_y0 + button_height), keypad_color, 3)
        cv2.rectangle(frame,(rec_x0,rec_y0),(rec_x0 + button_width,rec_y0 + button_height),hover_line_color,-1)
        cv2.putText(frame, action_keys[i], (action_x_p - 13, action_y_p), font, 0.75, keypad_color, 2)
 
-       # Store the key and its rectangle coordinates
+       # Store the key and its buttons coordinates
        key_rectangle_positions.append([(rec_x0,rec_y0),(rec_x0 + button_width,rec_y0 + button_height),action_keys[i]])
        key_value_positions.append([action_x_p,action_y_p,action_keys[i]])
        if (i < 1):
@@ -265,6 +270,7 @@ def draw_deposit_withdraw_buttons(frame):
            rec_y0 = rec_y0 - 100
            
 def draw_back_button(frame):
+    # clear the buffer to store agian the keypad coordinates
     if (len(key_rectangle_positions) != 0) and (len(key_value_positions) != 0):
         key_value_positions.clear()
         key_rectangle_positions.clear()
@@ -332,7 +338,7 @@ def get_fingertip (defects_start_points,contour,centroid,frame_shape):
                     break
             if find_finger_tip:
                 break
-
+    # update the finger tip point coordinate within the detection rectangle coordinates.
     finger_tip_x += int(detection_rec_x_start * frame_shape[1])
     finger_tip_y += int(detection_rec_y_start * frame_shape[0])
     finger_tip = (finger_tip_x,finger_tip_y)
