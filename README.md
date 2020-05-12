@@ -21,15 +21,15 @@ As a prototype for the project, we will mainly focus on implementing an ATM-simi
 - We used Tkinter Python framework to implememt the GUI part of our project
 #### Algorithms used:
 The implementation would mainly use image processing technologies like OpenCV library to detect the hand and finger movement by mainly 2 steps:
-- HSV Segmentation 
+# HSV Segmentation 
  In HSV (Hue, Saturation, Value) segmentation, the idea is to segment the hand based on the color. At first, we will sample the color of the hand. The reason for using HSV rather than RGB to eliminate the brightness because this is an issue when we detect the hand because the hand has to be under the same brightness in order to be detected. The brightness of a color is encoded in the Value (V) in the HSV. Hence, when we sample the color of the hand, we sample only the Hue (H) and Saturation (S)
  
-handHist = cv2.calcHist([ROI], [0, 1], None, [180, 256], [0, 180, 0, 256])
+'handHist = cv2.calcHist([ROI], [0, 1], None, [180, 256], [0, 180, 0, 256])'
   
-- Background subtraction
+# Background subtraction
 we need to have a background image (without the hand) first. To find the hand, we can subtract the image with hand from the background.
 
-fgbg = cv2.createBackgroundSubtractorMOG2(0,bg_sub_threshold)
+'fgbg = cv2.createBackgroundSubtractorMOG2(0,bg_sub_threshold)'
 
 then subtract the background form the frame for each input one to extract the hand mask
 #### Outputs and Inputs: 
