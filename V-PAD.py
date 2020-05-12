@@ -70,8 +70,8 @@ no_iterations_close = 7 # number of iteration of morphological close operation
 # variables to calculate elapsed time in seconds
 previous_time = 0
 time_in_seconds = 0
-hand_hist_time_limit = 4 # time to perform capture samples of hand color and perform calculate its histogram
-BG_sub_time_limit = 8    # time to perform background subtraction action
+hand_hist_time_limit = 7 # time to perform capture samples of hand color and perform calculate its histogram
+BG_sub_time_limit = 14    # time to perform background subtraction action
 
 # Number of milliseconds the welcome page waits
 welPage_delay = 2000
@@ -392,104 +392,165 @@ def mainProcess():
         global password_entered
         global money_entered
         global button_action
-        #global transaction_done
         global currentPage
+
+        #In case current Page is Password entry page#
         if currentPage == 1 :
+            
             # Draw the keypad:
             draw_keypad(output_image)
+            
+            #Prompt user to enter password#
             text_label.place(x=800, y=300)
-            var.set("Please insert your Bank Card\nAnd Enter your Password")
+            var.set("Please insert your Bank Card\nAnd Enter your 4-Digit Password")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
+
+            #In case user pressed Enter#
             if button_action == 'Enter':
                 password_entered = True
                 button_action=''
+                
+            #In case user pressed Clear#
             if button_action == 'Clear':
                 input_word=''
                 inputPass.set(input_word)
                 button_action=''
+
+            #In case user pressed Cancel#
             if button_action == 'Cancel':
                 root.destroy()
+
+            #Show the user the inputted Password#    
             if input_word!='' :
                 inputPass.set(input_word)
                 text_label2.config(font=tkFont.Font(family="Lucida Grande", size=25 ))
                 text_label2.place(x=900, y=500)
+
+            #Check the entered password#    
             if password_entered :
+
+                #If the enetered password is of valid length#
                 if len(input_word)==4 :
+
+                    #If password is correct#
                     if input_word == password :
                         input_word=''
-                        currentPage=2
+                        currentPage=2 #Go to choosing service page#
+
+                    #If password is incorrect#    
                     else:
                         text_label2.place(x=800, y=400)
-                        inputPass.set("Wrong Password,Try again")
+                        inputPass.set("Wrong Password,Try again") #Prompt the user of error#
                         input_word=''
                         password_entered=FALSE
+                        
+                #If the enetered password is of invalid length#
                 else:
                     text_label2.place(x=800, y=400)
-                    inputPass.set("Invalid Password Length\n Password should be 4 digits")
+                    inputPass.set("Invalid Password Length\n Password should be 4 digits") #Prompt the user of error#
                     input_word=''
                     password_entered=FALSE
-                    
+
+        #In case current Page is choosing service page#           
         elif currentPage==2 :
+
+            #Draw services buttons#
             draw_deposit_withdraw_buttons(output_image)
+
+            #Prompt the user to choose the service#
             inputPass.set('')
             text_label.place(x=720, y=300)
             var.set("Please Choose a service of your desire")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
 
+            #If Deposit service is chosen#
             if button_action == 'Deposit' :
-                currentPage = 3
-            if button_action == 'Withdraw' :
-                currentPage = 4
-            if button_action == 'Inquiry' :
-                currentPage = 5
+                currentPage = 3 #Go to Deposit page#
 
+            #If Withdraw service is choosen#
+            if button_action == 'Withdraw' :
+                currentPage = 4 #Go to Withdraw page#
+
+            #If Balance inquiry service is choosen#    
+            if button_action == 'Inquiry' :
+                currentPage = 5 #Go to Balance inquiry page#
+
+        #In case current Page is Deposit page# 
         elif currentPage == 3 :
+
+            #Prompt user to deposit the money#
             inputPass.set('')
             text_label.place(x=750, y=300)
             var.set("Please Insert only notes of 100,50,20\nNotes of 10 and 5 are not allowed")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
+
+            #Close system after the money is deposited#
             root.update()
             root.after(10000,)
             root.destroy()
 
+        #In case current Page is Withdraw page# 
         elif currentPage == 4 :
             # Draw the keypad:
             draw_keypad(output_image)
+
+            #Prompt user to enter the amount of money to withdraw#
             text_label.place(x=750, y=300)
             var.set("Please enter the amount of money\nyou wish to withdraw")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
+
+            #Show the user the inputted value of  money#
             if(input_word!=''):
                 inputPass.set(input_word+".00 EGP")
                 text_label2.config(font=tkFont.Font(family="Lucida Grande", size=25 ))
                 text_label2.place(x=900, y=500)
+
+            #In case user pressed Enter#
             if button_action == 'Enter':
                 money_entered = True
                 button_action=''
+
+            #In case user pressed Clear#
             if button_action == 'Clear':
                 input_word=''
                 inputPass.set(input_word)
                 button_action=''
+
+            #In case user pressed Cancel#
             if button_action == 'Cancel':
                 root.destroy()
+
+            #Check the entered value of money#  
             if money_entered :
+
+                #If value of money is within the users balance#
                 if int(input_word) <= Balance :
                     text_label2.place(x=850, y=400)
-                    inputPass.set("Transaction Done\nHave a nice Day")
+                    inputPass.set("Transaction Done\nHave a nice Day") #Prompt the user that the withdraw is successful#
+
+                    #Close system after the money is withdrawed#
                     root.update()
                     root.after(5000,)
                     root.destroy()
+
+                #If value of money is more than the users balance#
                 else:
                     text_label2.place(x=770, y=400)
                     text_label2.config(font=tkFont.Font(family="Lucida Grande", size=15 ))
-                    inputPass.set("Exceeding Balance\n Please enter an amount within your balance\n "+str(Balance)+".00 EGP")
+                    inputPass.set("Exceeding Balance\n Please enter an amount within your balance\n "+str(Balance)+".00 EGP") #Prompt the user of the error and inform him of his balance#
                     input_word=''
                     money_entered=FALSE
-                        
+
+        #In case current Page is Balance Inquiry page#           
         elif currentPage == 5 :
+
+            #Show user his available balance#
             inputPass.set('')
             text_label.place(x=850, y=300)
             var.set("Your current Balance is:\n"+str(Balance)+".00 EGP")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
+
+            #Close system after inqury is donw#
             root.update()
             root.after(5000,)
             root.destroy()
