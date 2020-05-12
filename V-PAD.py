@@ -446,6 +446,9 @@ def mainProcess():
             text_label.place(x=750, y=300)
             var.set("Please Insert only notes of 100,50,20\nNotes of 10 and 5 are not allowed")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
+            root.update()
+            root.after(10000,)
+            root.destroy()
 
         elif currentPage == 4 :
             # Draw the keypad:
@@ -470,7 +473,9 @@ def mainProcess():
                 if int(input_word) <= Balance :
                     text_label2.place(x=850, y=400)
                     inputPass.set("Transaction Done\nHave a nice Day")
-                    input_word=''
+                    root.update()
+                    root.after(5000,)
+                    root.destroy()
                 else:
                     text_label2.place(x=770, y=400)
                     text_label2.config(font=tkFont.Font(family="Lucida Grande", size=15 ))
@@ -483,6 +488,10 @@ def mainProcess():
             text_label.place(x=850, y=300)
             var.set("Your current Balance is:\n"+str(Balance)+".00 EGP")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
+            root.update()
+            root.after(5000,)
+            root.destroy()
+            
             
         # then the hand histogram is created and the background subtraction is performed
         roi = frame[detection_rec_y0:detection_rec_y0 + detection_rec_height,
