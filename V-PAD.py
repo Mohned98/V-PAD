@@ -19,9 +19,10 @@ key_actions_dy = 300                  # vertical distance of the action rectangl
 keypad_distance_from_border = 10      # horizontal distance between rectangle border and keypad
 font = cv2.FONT_HERSHEY_SIMPLEX       # Font type
 keypad_color = (23,208,253)           # Keypad border and keys color
+keypad_bg_color = (0,0,0)
 hover_color = (255,0,0)               # keypad keys hover color
-hover_circle_color = (0,200,0)        # circle color that appears when hovering over keypad keys
-hover_line_color = (0,0,0)            # cross color that appear when hovering over keypad keys
+hover_circle_color = (0,128,255)        # circle color that appears when hovering over keypad keys
+hover_line_color = (0,0,0)      # cross color that appear when hovering over keypad keys
 hover_rectangle_color = (255,255,255) # rectangle key hover color 
 Enter_button_color = (0,255,0)        # actions buttons color
 Cancel_button_color = (0,0,255)
@@ -162,7 +163,7 @@ def draw_keypad_background(frame):
     key_rec_y0 = rec_key_y
     key_rec_x1 = key_rec_x0 + (rec_key_width * 3)
     key_rec_y1 = key_rec_y0 + (rec_key_height * 4)
-    cv2.rectangle(frame,(key_rec_x0,key_rec_y0),(key_rec_x1,key_rec_y1),hover_line_color,-1)
+    cv2.rectangle(frame,(key_rec_x0,key_rec_y0),(key_rec_x1,key_rec_y1),keypad_bg_color,-1)
 
 def draw_keypad(frame):
     key_num = 0
@@ -354,12 +355,12 @@ def mainProcess():
         # the background subtraction hasn't been performed
         global time_in_seconds
         if time_in_seconds < hand_hist_time_limit:
-            var.set("Please position your hand on the green rectangle till it disappears\nPlease ONLY position your hand and move away your face\nDO NOT move your hand")
+            var.set("Please position your hand on the green rectangle till\nit disappears\nPlease ONLY position your hand and move away\nyour face\nDO NOT move your hand")
             x0, y0 = int(sample_hist_x[0]*frame.shape[0]), int(sample_hist_y[0]*frame.shape[1]) + (detection_rec_width // 2) -10 
             cv2.rectangle(output_image,(y0, x0),(y0 + 84,x0 + 116),hand_hist_rec_color, 1)
         elif time_in_seconds > hand_hist_time_limit and time_in_seconds < BG_sub_time_limit:
             text_label.place(x=700, y=300)
-            var.set("Please move away from area inbounded in the blue rectangle\n In order to detect your surrounding Environment")
+            var.set("Please move away from area inbounded in\nthe blue rectangle\n In order to detect your surrounding Environment")
             cv2.rectangle(output_image,(detection_rec_x0,detection_rec_y0),(detection_rec_x1, detection_rec_y1),
                   detection_rec_color, 2)
         current_time = round(time.perf_counter())
