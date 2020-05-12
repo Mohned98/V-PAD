@@ -263,7 +263,29 @@ def draw_deposit_withdraw_buttons(frame):
        else:
            rec_x0 = rec_x0 - (xdistance_between_buttons) - 20
            rec_y0 = rec_y0 - 100
+           
+def draw_back_button(frame):
+    if (len(key_rectangle_positions) != 0) and (len(key_value_positions) != 0):
+        key_value_positions.clear()
+        key_rectangle_positions.clear()
+        
+    button = 'Back'
+    # Button rectangle coordinates:
+    rec_x0 = int(detection_rec_x_start * frame.shape[1]) + 30
+    rec_y0 = rec_key_y + height_from_txt
 
+    # button key value coordinates:
+    action_x_p = rec_x0 + int(button_width / 4)
+    action_y_p = rec_y0 + int(button_height / 1.5)
+
+    # draw the button:
+    cv2.rectangle(frame, (rec_x0, rec_y0), (rec_x0 + button_width, rec_y0 + button_height), keypad_color, 3)
+    cv2.rectangle(frame, (rec_x0, rec_y0), (rec_x0 + button_width, rec_y0 + button_height), hover_line_color, -1)
+    cv2.putText(frame, button, (action_x_p - 13, action_y_p), font, 0.75, keypad_color, 2)
+    
+    # store the coordinates:
+    key_rectangle_positions.append([(rec_x0, rec_y0), (rec_x0 + button_width, rec_y0 + button_height),button])
+    key_value_positions.append([action_x_p, action_y_p,button])
 def contour_centroid(contour):
     moments = cv2.moments(contour)
     if moments['m00'] != 0:
@@ -544,17 +566,18 @@ def mainProcess():
         #In case current Page is Balance Inquiry page#           
         elif currentPage == 5 :
 
+            #Draw back button#
+            draw_back_button(output_image)
+            
             #Show user his available balance#
             inputPass.set('')
             text_label.place(x=850, y=300)
             var.set("Your current Balance is:\n"+str(Balance)+".00 EGP")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
 
-            #Close system after inqury is donw#
-            root.update()
-            root.after(5000,)
-            root.destroy()
-            
+            #if user pressed back#
+            if button_action=='Back':
+                currentPage=2 # goto choosing service page#
             
         # then the hand histogram is created and the background subtraction is performed
         roi = frame[detection_rec_y0:detection_rec_y0 + detection_rec_height,
