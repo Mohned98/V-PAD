@@ -10,13 +10,13 @@ import tkinter.font as tkFont
 # define keypad properties:
 rec_key_width = 100                   # the width of the key rectangle
 rec_key_height = 80                   # the height of the key rectangle
-rec_key_y = 70                        # start y position of key rectangle
+rec_key_y = 15                        # start y position of key rectangle
 key_rectangle_positions = []          # list to store the positions of each key rectangle
 key_value_positions = []              # list to store the positions of the key itself
 pressed_key_buffer = []               # buffer to store the pressed key
-key_actions_dx = 40                   # horizontal distance of the action rectangle from the original keypad
-key_actions_dy = 350                  # vertical distance between the action keys rectangles
-keypad_distance_from_border = 70      # horizontal distance between rectangle border and keypad
+key_actions_dx = 20                   # horizontal distance between the action keys rectangles
+key_actions_dy = 300                  # vertical distance of the action rectangle from the original keypad
+keypad_distance_from_border = 10      # horizontal distance between rectangle border and keypad
 font = cv2.FONT_HERSHEY_SIMPLEX       # Font type
 keypad_color = (23,208,253)           # Keypad border and keys color
 hover_color = (255,0,0)               # keypad keys hover color
@@ -35,18 +35,19 @@ sample_hist_y = [9.0/20.0, 10.0/20.0, 11.0/20.0]
 
 # Detection Rectangle properties
 # detection rectangle coordinates percentage of total width and height
-detection_rec_x_start = 0.5 
-detection_rec_x_end = 0.98
-detection_rec_y_start = 0.1
-detection_rec_y_end = 0.8
+detection_rec_x_start = 0.48
+detection_rec_x_end = 1
+detection_rec_y_start = 0.0
+detection_rec_y_end = 0.9
 # detection rectangle color
 detection_rec_color = (255, 0, 0)
 
+
 # Withdraw and Deposit buttons coordinates and properties:
-button_width = 170
-button_height = 80
-xdistance_between_buttons = 120
-height_from_txt = 170
+button_width = 110
+button_height = 50
+xdistance_between_buttons = 70
+height_from_txt = 180
 button_color = (54,38,255)
 
 # Variables to calculate the finger tip point:
@@ -68,21 +69,22 @@ no_iterations_close = 7 # number of iteration of morphological close operation
 # variables to calculate elapsed time in seconds
 previous_time = 0
 time_in_seconds = 0
-hand_hist_time_limit = 4 # time to perform capture samples of hand color and perform calculate its histogram
-BG_sub_time_limit = 8   # time to perform background subtraction action
+hand_hist_time_limit = 10 # time to perform capture samples of hand color and perform calculate its histogram
+BG_sub_time_limit = 20    # time to perform background subtraction action
 
 # Number of milliseconds the welcome page waits
-welPage_delay = 2000
+welPage_delay = 3000
 
+# Phases indication flags 
 fgbg = None      # for foreground subtraction handling
 hand_hist = None # for calculating hand histigram
 
-# Phases indication flags 
+fgbg = None
+hand_hist = None 
+
 BG_captured = False
 hand_hist_detected = False
 
-# action of the pressed button 'Withdraw' , 'Deposit' , 'Cancel' , 'Clear' or 'Enter'
-button_action = ''
 # create a string for the entered number
 input_word = ''
 
@@ -93,7 +95,16 @@ password='7854'
 password_entered=FALSE
 
 #current page for user (PasswordPage=1, ChooseService=2, Deposit=3, Withdraw=4, Inquiry=5)
-currentPage = 1
+currentPage=1
+
+#flag for choosing Desposit
+deposit_chosen=FALSE
+
+#flag for choosing Withdraw
+withdraw_chosen=FALSE
+
+#flag for choosing Balance Inquiry
+inquiry_chosen=FALSE
 
 #Flag for completing deposit
 deposit_done=FALSE
@@ -201,19 +212,19 @@ def draw_keypad(frame):
            # Update the x and y position of the rectangle:
            key_rec_x0 = key_rec_x1
            key_rec_x1 = key_rec_x0 + rec_key_width
-    
-    key_rec_x0 = int(detection_rec_x_start * frame.shape[1]) + keypad_distance_from_border - 30
+
+
+    action_rec_x0 = int(detection_rec_x_start * frame.shape[1]) + keypad_distance_from_border
+    action_rec_y0 = rec_key_y + (4 * rec_key_height)
     # draw the key actions:
     for i in range (3):
         # the rectangle coordinates of the key actions:
-        action_rec_x0 = key_rec_x0 + i * (key_actions_dx + rec_key_width)
-        action_rec_y0 = rec_key_y + key_actions_dy
-        action_rec_x1 = action_rec_x0 + rec_key_width - 10
-        action_rec_y1 = action_rec_y0 + rec_key_height - 20
+        action_rec_x1 = action_rec_x0 + rec_key_width
+        action_rec_y1 = action_rec_y0 + rec_key_height
 
         # The action key coordinates:
-        action_x_p = action_rec_x0 + int(rec_key_width / 4)
-        action_y_p = action_rec_y0 + int(rec_key_height / 2)
+        action_x_p = action_rec_x0 + int(rec_key_width /3)
+        action_y_p = action_rec_y0 + int(rec_key_height /1.5)
 
         # Action key color:
         if (i == 0):
@@ -231,30 +242,36 @@ def draw_keypad(frame):
         key_value_positions.append([action_x_p - 17, action_y_p, key_actions[i]])
         key_rectangle_positions.append([(action_rec_x0,action_rec_y0), (action_rec_x1,action_rec_y1), key_actions[i]])
 
+        action_rec_x0 = action_rec_x1
+
 def draw_deposit_withdraw_buttons(frame):
     if (len(key_rectangle_positions) != 0) and (len(key_value_positions) != 0):
         key_value_positions.clear()
         key_rectangle_positions.clear()
 
-    txt_point = (int(detection_rec_x_start * frame.shape[1]) + 45, rec_key_y + 100)
-    cv2.putText(frame,"Payment Process",txt_point,font,1.5,hover_line_color,3)
+    #txt_point = (int(detection_rec_x_start * frame.shape[1]) + 45, rec_key_y + 100)
+    #cv2.putText(frame,"Payment Process",txt_point,font,1.5,hover_line_color,3)
 
-    rec_x0 = int(detection_rec_x_start * frame.shape[1]) + 20
+    rec_x0 = int(detection_rec_x_start * frame.shape[1]) + 10
     rec_y0 = rec_key_y + height_from_txt
-    action_keys = ['Withdraw','Deposit']
-    for i in range (2):
+    action_keys = ['Withdraw','Deposit','Inquiry']
+    for i in range (3):
        # The action key coordinates
-       action_x_p = rec_x0 + int(rec_key_width / 3)
-       action_y_p = rec_y0 + int(rec_key_height / 1.5)
+       action_x_p = rec_x0 + int(button_width /4)
+       action_y_p = rec_y0 + int(button_height/1.5)
 
        # draw the buttons
        cv2.rectangle(frame,(rec_x0,rec_y0),(rec_x0 + button_width,rec_y0 + button_height),button_color,-1)
-       cv2.putText(frame, action_keys[i], (action_x_p - 10, action_y_p), font, 1, hover_line_color, 2)
+       cv2.putText(frame, action_keys[i], (action_x_p - 10, action_y_p), font, 0.75, hover_line_color, 2)
 
        # Store the key and its rectangle coordinates
        key_rectangle_positions.append([(rec_x0,rec_y0),(rec_x0 + button_width,rec_y0 + button_height),action_keys[i]])
        key_value_positions.append([action_x_p,action_y_p,action_keys[i]])
-       rec_x0 = rec_x0 + button_width + (xdistance_between_buttons)
+       if (i < 1):
+           rec_x0 = rec_x0 + button_width + (xdistance_between_buttons)
+       else:
+           rec_x0 = rec_x0 - (xdistance_between_buttons) - 20
+           rec_y0 = rec_y0 - 100
 
 def contour_centroid(contour):
     moments = cv2.moments(contour)
@@ -330,7 +347,7 @@ def draw_selected_key(frame,key_index):
     for i in range (12):
         for j in range (12):
            cv2.rectangle(frame, key_rectangle_info[0], key_rectangle_info[1], hover_rectangle_color, -1)
-           if len(str(key_info[0])) > 1:
+           if len(key_info[2]) > 1:
                cv2.putText(frame, key_info[2], (key_info[0], key_info[1]), font, 0.75, hover_color, 2)
            else:
                cv2.putText(frame, key_info[2], (key_info[0], key_info[1]), font, 1.5, hover_color, 3)
@@ -342,6 +359,10 @@ def mainProcess():
     output_image = cv2.bilateralFilter(output_image, 5, 50, 100) #smoothing filter
     global BG_captured
     global hand_hist_detected
+
+    cv2.rectangle(output_image, (detection_rec_x0, detection_rec_y0), (detection_rec_x1, detection_rec_y1),
+                  detection_rec_color, 2)
+
     if BG_captured == False :
         # then the time hasn't reached yet its limit value so either 
         # the hand histogram hasn't been created yet or 
@@ -383,22 +404,24 @@ def mainProcess():
         global input_word
         global password_entered
         global money_entered
-        global button_action
-        #global transaction_done
+        global deposit_chosen
+        global withdraw_chosen
+        global inquiry_chosen
+        global transaction_done
         global currentPage
-        if currentPage == 1 :
-            # Draw the keypad:
-            draw_keypad(output_image)
+        global Balance
+        if(currentPage==1):
             text_label.place(x=800, y=300)
             var.set("Please insert your Bank Card\nAnd Enter your Password")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
-            if input_word!='' :
+            if(input_word!=''):
                 inputPass.set(input_word)
                 text_label2.config(font=tkFont.Font(family="Lucida Grande", size=25 ))
-                text_label2.place(x=900, y=500)      
-            if password_entered :
-                if len(input_word)==4 :
-                    if input_word==password :
+                text_label2.place(x=900, y=500)
+                    
+            if(password_entered):
+                if(len(input_word)==4):
+                    if(input_word==password):
                         text_label2.place(x=800, y=400)
                         inputPass.set("Password entered Successfully")
                         input_word=''
@@ -414,34 +437,20 @@ def mainProcess():
                     input_word=''
                     password_entered=FALSE
                     
-        elif currentPage==2 :
-            draw_deposit_withdraw_buttons(output_image)
+        elif(currentPage==2):
             inputPass.set('')
             text_label.place(x=720, y=300)
             var.set("Please Choose a service of your desire")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
 
-            if button_action == 'Deposit' :
+            if(deposit_chosen):
                 currentPage=3
-            if button_action == 'Withdraw' :
+            if(withdraw_chosen):
                 currentPage=4
-            if button_action == 'Inquiry' :
+            if(inquiry_chosen):
                 currentPage=5
 
-        elif currentPage == 3 :
-            inputPass.set('')
-            text_label.place(x=750, y=300)
-            var.set("Please Insert only notes of 100,50,20\nNotes of 10 and 5 are not allowed")
-            text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
-            
-            if deposit_done :
-                text_label2.place(x=850, y=400)
-                inputPass.set("Transaction Done\nHave a nice Day")
-                input_word=''
-
-        elif currentPage == 4 :
-            # Draw the keypad:
-            draw_keypad(output_image)
+        elif(currentPage==4):
             text_label.place(x=750, y=300)
             var.set("Please enter the amount of money\nyou wish to withdraw")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
@@ -450,8 +459,8 @@ def mainProcess():
                 text_label2.config(font=tkFont.Font(family="Lucida Grande", size=25 ))
                 text_label2.place(x=900, y=500)
                 
-            if money_entered :
-                if int(input_word) <= Balance :
+            if(money_entered):
+                if(int(input_word)<=Balance):
                     text_label2.place(x=850, y=400)
                     inputPass.set("Transaction Done\nHave a nice Day")
                     input_word=''
@@ -461,13 +470,31 @@ def mainProcess():
                     inputPass.set("Exceeding Balance\n Please enter an amount within your balance\n "+str(Balance)+".00 EGP")
                     input_word=''
                     money_entered=FALSE
-                        
-        elif currentPage == 5 :
+                    
+        elif(currentPage==3):
+            inputPass.set('')
+            text_label.place(x=750, y=300)
+            var.set("Please Insert only notes of 100,50,20\nNotes of 10 and 5 are not allowed")
+            text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
+            
+            if(deposit_done):
+                text_label2.place(x=850, y=400)
+                inputPass.set("Transaction Done\nHave a nice Day")
+                input_word=''
+                password_entered=FALSE
+
+            
+        elif(currentPage==5):
             inputPass.set('')
             text_label.place(x=850, y=300)
             var.set("Your current Balance is:\n"+str(Balance)+".00 EGP")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
             
+
+        # Draw the keypad:
+        draw_keypad(output_image)
+        #draw_deposit_withdraw_buttons(output_image)
+
         # then the hand histogram is created and the background subtraction is performed
         roi = frame[detection_rec_y0:detection_rec_y0 + detection_rec_height,
                            detection_rec_x0:detection_rec_x0 + detection_rec_width]
@@ -487,7 +514,7 @@ def mainProcess():
         #cv2.imshow("Hand Mask", hand_mask)
 
         # Find the contours of the hand mask:
-        _,contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if len(contours) > 0:
             max_contour = max(contours, key=cv2.contourArea)          # hand palm is the largest contour area.
             center = contour_centroid(max_contour)                    # Find the center of the hand palm.
@@ -504,13 +531,10 @@ def mainProcess():
                 # find the key pressed and write it:
                 key_index = key_pressed(fingertip_point)
                 # if a key has been selected for 10 frames, write the key and clear the buffer
-                if len(pressed_key_buffer) > 15 :
-                   list = pressed_key_buffer[5:]
+                if (len(pressed_key_buffer) > 30):
+                   list = pressed_key_buffer[15:]
                    if all_same(list):              # check if all items inside the list are identical
-                       if len(list[0]) == 1:
-                           input_word += list[0]
-                       else:
-                           button_action = list[0]
+                       input_word += list[0]
                        draw_selected_key(output_image,key_index)
                    pressed_key_buffer.clear()
 
@@ -529,7 +553,7 @@ root = Tk()
 root.wm_title("V_PAD")
 root.geometry("1280x800")
 
-background_image = PhotoImage(file="/home/mohned/Desktop/V-PAD/hand.png")
+background_image = PhotoImage(file="hand.png")
 background_label = Label(root, image=background_image)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 root.update()
@@ -537,7 +561,7 @@ root.after(welPage_delay,)
 background_label.pack_forget()
 
 
-background_image = PhotoImage(file="/home/mohned/Desktop/V-PAD/img2.png")
+background_image = PhotoImage(file="img2.png")
 background_label = Label(root, image=background_image)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -554,8 +578,8 @@ text_label2 = Label(background_label, textvariable=inputPass, font = tkFont.Font
 
 #capture webcam video  
 cap = cv2.VideoCapture(0) # object for the video handle
-cap.set(3, 1920) # change width to 1920 pixels
-cap.set(4, 1080) #change height to 1080 pixels
+cap.set(3, 900) # change width to 1920 pixels
+cap.set(4, 600) #change height to 1080 pixels
 cap.set(10, 200) #change brightness to 200
 _,frame=cap.read()
 detection_rec_x0 = int(detection_rec_x_start * frame.shape[1]) # The top left point x value                     
