@@ -48,7 +48,7 @@ button_width = 110
 button_height = 50
 xdistance_between_buttons = 70
 height_from_txt = 180
-button_color = (54,38,255)
+
 
 # Variables to calculate the finger tip point:
 previous_fingertip_point = (0,0)
@@ -246,12 +246,13 @@ def draw_deposit_withdraw_buttons(frame):
     action_keys = ['Withdraw','Deposit','Inquiry']
     for i in range (3):
        # The action key coordinates
-       action_x_p = rec_x0 + int(button_width /4)
+       action_x_p = rec_x0 + int(button_width /6)
        action_y_p = rec_y0 + int(button_height/1.5)
 
        # draw the buttons
-       cv2.rectangle(frame,(rec_x0,rec_y0),(rec_x0 + button_width,rec_y0 + button_height),button_color,-1)
-       cv2.putText(frame, action_keys[i], (action_x_p - 10, action_y_p), font, 0.75, hover_line_color, 2)
+       cv2.rectangle(frame, (rec_x0, rec_y0), (rec_x0 + button_width, rec_y0 + button_height), keypad_color, 3)
+       cv2.rectangle(frame,(rec_x0,rec_y0),(rec_x0 + button_width,rec_y0 + button_height),hover_line_color,-1)
+       cv2.putText(frame, action_keys[i], (action_x_p - 13, action_y_p), font, 0.75, keypad_color, 2)
 
        # Store the key and its rectangle coordinates
        key_rectangle_positions.append([(rec_x0,rec_y0),(rec_x0 + button_width,rec_y0 + button_height),action_keys[i]])
@@ -503,7 +504,7 @@ def mainProcess():
         #cv2.imshow("Hand Mask", hand_mask)
 
         # Find the contours of the hand mask:
-        _,contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(hand_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if len(contours) > 0:
             max_contour = max(contours, key=cv2.contourArea)          # hand palm is the largest contour area.
             center = contour_centroid(max_contour)                    # Find the center of the hand palm.
@@ -545,7 +546,7 @@ root = Tk()
 root.wm_title("V_PAD")
 root.geometry("1280x800")
 
-background_image = PhotoImage(file="/home/mohned/Desktop/V-PAD/hand.png")
+background_image = PhotoImage(file="hand.png")
 background_label = Label(root, image=background_image)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 root.update()
@@ -553,7 +554,7 @@ root.after(welPage_delay,)
 background_label.pack_forget()
 
 
-background_image = PhotoImage(file="/home/mohned/Desktop/V-PAD/img2.png")
+background_image = PhotoImage(file="img2.png")
 background_label = Label(root, image=background_image)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -571,13 +572,13 @@ text_label2 = Label(background_label, textvariable=inputPass, font = tkFont.Font
 #capture webcam video  
 cap = cv2.VideoCapture(0) # object for the video handle
 cap.set(3, 900) # change width to 1920 pixels
-cap.set(4, 600) #change height to 1080 pixels
-cap.set(10, 200) #change brightness to 200
-_,frame=cap.read()
+cap.set(4, 600) #change h
 detection_rec_x0 = int(detection_rec_x_start * frame.shape[1]) # The top left point x value                     
 detection_rec_y0 = int(detection_rec_y_start * frame.shape[0]) # The top left point y value
 detection_rec_x1 = int(detection_rec_x_end * frame.shape[1])   # The bottom right point x value
-detection_rec_y1 = int(detection_rec_y_end * frame.shape[0])   # The bottom right point y value
+detection_rec_y1 = int(detectieight to 1080 pixels
+cap.set(10, 200) #change brightness to 200
+_,frame=cap.read()on_rec_y_end * frame.shape[0])   # The bottom right point y value
 detection_rec_height = detection_rec_y1 - detection_rec_y0
 detection_rec_width = detection_rec_x1 - detection_rec_x0
 
