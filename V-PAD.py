@@ -15,26 +15,44 @@ key_rectangle_positions = []          # list to store the positions of each key 
 key_value_positions = []              # list to store the positions of the key itself
 pressed_key_buffer = []               # buffer to store the pressed key
 key_actions_dx = 40                   # horizontal distance of the action rectangle from the original keypad
-key_actions_dy = 20                   # vertical distance between the action keys rectangles
-font = cv2.FONT_HERSHEY_SIMPLEX
-keypad_color = (23,208,253)
+key_actions_dy = 350                  # vertical distance between the action keys rectangles
+keypad_distance_from_border = 70      # horizontal distance between rectangle border and keypad
+font = cv2.FONT_HERSHEY_SIMPLEX       # Font type
+keypad_color = (23,208,253)           # Keypad border and keys color
 hover_color = (255,0,0)               # keypad keys hover color
 hover_circle_color = (0,200,0)        # circle color that appears when hovering over keypad keys
 hover_line_color = (0,0,0)            # cross color that appear when hovering over keypad keys
-hover_rectangle_color = (255,255,255)
-Enter_button_color = (0,255,0)
+hover_rectangle_color = (255,255,255) # rectangle key hover color 
+Enter_button_color = (0,255,0)        # actions buttons color
 Cancel_button_color = (0,0,255)
 Clear_button_color = (0,255,255)
+
+# Hand Histogram detection rectangle properties
 hand_hist_rec_color = (0, 255, 0)
+# hand histogram samples coordinates
+sample_hist_x = [6.0/20.0, 9.0/20.0, 12.0/20.0]
+sample_hist_y = [9.0/20.0, 10.0/20.0, 11.0/20.0]
 
 # Detection Rectangle properties
 # detection rectangle coordinates percentage of total width and height
 detection_rec_x_start = 0.5 
-detection_rec_x_end = 1
+detection_rec_x_end = 0.98
 detection_rec_y_start = 0.1
 detection_rec_y_end = 0.8
 # detection rectangle color
 detection_rec_color = (255, 0, 0)
+
+# Withdraw and Deposit buttons coordinates and properties:
+button_width = 170
+button_height = 80
+xdistance_between_buttons = 120
+height_from_txt = 170
+button_color = (54,38,255)
+
+# Variables to calculate the finger tip point:
+previous_fingertip_point = (0,0)
+farthest_x_margin = 80
+closest_x_margin = 4
 
 # tuning parameters
 # Mothion detection parameters
@@ -53,12 +71,12 @@ time_in_seconds = 0
 hand_hist_time_limit = 10 # time to perform capture samples of hand color and perform calculate its histogram
 BG_sub_time_limit = 20    # time to perform background subtraction action
 
-# hand histogram samples coordinates
-sample_hist_x = [6.0/20.0, 9.0/20.0, 12.0/20.0]
-sample_hist_y = [9.0/20.0, 10.0/20.0, 11.0/20.0]
+# Number of milliseconds the welcome page waits
+welPage_delay = 3000
 
-BG_captured = False
-hand_hist_detected = False
+# Phases indication flags 
+fgbg = None      # for foreground subtraction handling
+hand_hist = None # for calculating hand histigram
 
 fgbg = None
 hand_hist = None 
@@ -149,7 +167,7 @@ def binarizeImage(img):
     return thresh
 
 def draw_keypad_background(frame):
-    key_rec_x0 = int(detection_rec_x_start * frame.shape[1]) + 5
+    key_rec_x0 = int(detection_rec_x_start * frame.shape[1]) + keypad_distance_from_border
     key_rec_y0 = rec_key_y
     key_rec_x1 = key_rec_x0 + (rec_key_width * 3)
     key_rec_y1 = key_rec_y0 + (rec_key_height * 4)
@@ -166,7 +184,7 @@ def draw_keypad(frame):
     draw_keypad_background(frame)
     # draw the keypad number keys:
     for row in range (4):
-        key_rec_x0 = int(detection_rec_x_start * frame.shape[1]) + 5
+        key_rec_x0 = int(detection_rec_x_start * frame.shape[1]) + keypad_distance_from_border
         key_rec_y0 = rec_key_y + row * rec_key_height
         key_rec_x1 = key_rec_x0 + rec_key_width
         key_rec_y1 = key_rec_y0 + rec_key_height
@@ -190,18 +208,19 @@ def draw_keypad(frame):
            # Update the x and y position of the rectangle:
            key_rec_x0 = key_rec_x1
            key_rec_x1 = key_rec_x0 + rec_key_width
-
+    
+    key_rec_x0 = int(detection_rec_x_start * frame.shape[1]) + keypad_distance_from_border - 30
     # draw the key actions:
     for i in range (3):
         # the rectangle coordinates of the key actions:
-        action_rec_x0 = key_rec_x0 + key_actions_dx
-        action_rec_y0 = rec_key_y + i * (key_actions_dy + rec_key_height)
-        action_rec_x1 = action_rec_x0 + rec_key_width
-        action_rec_y1 = action_rec_y0 + rec_key_height
+        action_rec_x0 = key_rec_x0 + i * (key_actions_dx + rec_key_width)
+        action_rec_y0 = rec_key_y + key_actions_dy
+        action_rec_x1 = action_rec_x0 + rec_key_width - 10
+        action_rec_y1 = action_rec_y0 + rec_key_height - 20
 
         # The action key coordinates:
-        action_x_p = action_rec_x0 + int(rec_key_width / 3)
-        action_y_p = action_rec_y0 + int(rec_key_height / 1.5)
+        action_x_p = action_rec_x0 + int(rec_key_width / 4)
+        action_y_p = action_rec_y0 + int(rec_key_height / 2)
 
         # Action key color:
         if (i == 0):
@@ -219,6 +238,31 @@ def draw_keypad(frame):
         key_value_positions.append([action_x_p - 17, action_y_p, key_actions[i]])
         key_rectangle_positions.append([(action_rec_x0,action_rec_y0), (action_rec_x1,action_rec_y1), key_actions[i]])
 
+def draw_deposit_withdraw_buttons(frame):
+    if (len(key_rectangle_positions) != 0) and (len(key_value_positions) != 0):
+        key_value_positions.clear()
+        key_rectangle_positions.clear()
+
+    txt_point = (int(detection_rec_x_start * frame.shape[1]) + 45, rec_key_y + 100)
+    cv2.putText(frame,"Payment Process",txt_point,font,1.5,hover_line_color,3)
+
+    rec_x0 = int(detection_rec_x_start * frame.shape[1]) + 20
+    rec_y0 = rec_key_y + height_from_txt
+    action_keys = ['Withdraw','Deposit']
+    for i in range (2):
+       # The action key coordinates
+       action_x_p = rec_x0 + int(rec_key_width / 3)
+       action_y_p = rec_y0 + int(rec_key_height / 1.5)
+
+       # draw the buttons
+       cv2.rectangle(frame,(rec_x0,rec_y0),(rec_x0 + button_width,rec_y0 + button_height),button_color,-1)
+       cv2.putText(frame, action_keys[i], (action_x_p - 10, action_y_p), font, 1, hover_line_color, 2)
+
+       # Store the key and its rectangle coordinates
+       key_rectangle_positions.append([(rec_x0,rec_y0),(rec_x0 + button_width,rec_y0 + button_height),action_keys[i]])
+       key_value_positions.append([action_x_p,action_y_p,action_keys[i]])
+       rec_x0 = rec_x0 + button_width + (xdistance_between_buttons)
+
 def contour_centroid(contour):
     moments = cv2.moments(contour)
     if moments['m00'] != 0:
@@ -230,7 +274,6 @@ def contour_centroid(contour):
 
 def get_fingertip (defects_start_points,contour,centroid,frame_shape):
     farthest_points = []
-    x_margin = 4
     cx = centroid[0] ; cy = centroid[1]     # center point coordinates of hand contour:
     finger_tip_x = 0;  finger_tip_y = 0
 
@@ -254,11 +297,11 @@ def get_fingertip (defects_start_points,contour,centroid,frame_shape):
         for index in range(len(x)):
             x_p = int(x[index])
             y_p = int(y[index])
-            if (x_p > cx - 80) and (x_p < cx + 80) and (y_p < cy):
+            if (x_p > cx -farthest_x_margin) and (x_p < cx + farthest_x_margin) and (y_p < cy):
                 farthest_points.append((x_p, y_p))
 
         for j in range(3):
-            closest_x = x_margin + j * 4
+            closest_x = closest_x_margin + j * 4
             for i in range(len(farthest_points)):
                 if (farthest_points[i][0] > cx - closest_x) and (farthest_points[i][0] < cx + closest_x):
                     finger_tip_x = farthest_points[i][0]  ;    finger_tip_y = farthest_points[i][1]
@@ -468,15 +511,14 @@ def mainProcess():
 
                 # find the key pressed and write it:
                 key_index = key_pressed(fingertip_point)
-                if (len(pressed_key_buffer) > 20):
-                   list = pressed_key_buffer[10:]
+                # if a key has been selected for 10 frames, write the key and clear the buffer
+                if (len(pressed_key_buffer) > 15):
+                   list = pressed_key_buffer[5:]
                    if all_same(list):              # check if all items inside the list are identical
                        input_word += list[0]
                        draw_selected_key(output_image,key_index)
                    pressed_key_buffer.clear()
 
-    # write the input word (sheloo 3adi)
-    cv2.putText(output_image, input_word, (200, 100), font, 2, hover_line_color, 2)
     #cv2.imshow('V-PAD',output_image)
     tk_output_image = cv2.cvtColor(output_image, cv2.COLOR_BGR2RGBA)
     tk_output_image = Image.fromarray(tk_output_image)
@@ -492,11 +534,11 @@ root = Tk()
 root.wm_title("V_PAD")
 root.geometry("1280x800")
 
-background_image = PhotoImage(file="hand.png") # TODO (path to a .png photo)
+background_image = PhotoImage(file="hand.png")
 background_label = Label(root, image=background_image)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 root.update()
-root.after(4000,)
+root.after(welPage_delay,)
 background_label.pack_forget()
 
 
