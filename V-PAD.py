@@ -96,9 +96,6 @@ password_entered=FALSE
 #current page for user (PasswordPage=1, ChooseService=2, Deposit=3, Withdraw=4, Inquiry=5)
 currentPage=1
 
-#Flag for completing deposit
-deposit_done=FALSE
-
 #Flag for submitting the amount of money to be withdrawed
 money_entered=FALSE
 
@@ -401,15 +398,15 @@ def mainProcess():
             text_label.place(x=800, y=300)
             var.set("Please insert your Bank Card\nAnd Enter your Password")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
+            if button_action == 'Enter':
+                password_entered = True
             if input_word!='' :
                 inputPass.set(input_word)
                 text_label2.config(font=tkFont.Font(family="Lucida Grande", size=25 ))
                 text_label2.place(x=900, y=500)     
             if password_entered :
                 if len(input_word)==4 :
-                    if input_word==password :
-                        text_label2.place(x=800, y=400)
-                        inputPass.set("Password entered Successfully")
+                    if input_word == password :
                         input_word=''
                         currentPage=2
                     else:
@@ -442,11 +439,6 @@ def mainProcess():
             text_label.place(x=750, y=300)
             var.set("Please Insert only notes of 100,50,20\nNotes of 10 and 5 are not allowed")
             text_label.config(font=tkFont.Font(family="Lucida Grande", size=20 ))
-            
-            if deposit_done :
-                text_label2.place(x=850, y=400)
-                inputPass.set("Transaction Done\nHave a nice Day")
-                input_word=''
 
         elif currentPage == 4 :
             # Draw the keypad:
@@ -458,7 +450,8 @@ def mainProcess():
                 inputPass.set(input_word+".00 EGP")
                 text_label2.config(font=tkFont.Font(family="Lucida Grande", size=25 ))
                 text_label2.place(x=900, y=500)
-                
+            if button_action == 'Enter':
+                money_entered = True
             if money_entered :
                 if int(input_word) <= Balance :
                     text_label2.place(x=850, y=400)
